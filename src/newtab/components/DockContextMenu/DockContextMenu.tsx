@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import './DockContextMenu.css'
 
 export type DockMenuItem = {
@@ -92,7 +93,9 @@ export default function DockContextMenu({ x, y, items, onClose }: DockContextMen
     }
   }
 
-  return (
+  // Portal 到 body：Dock/TopBar 的 backdrop-filter 会创建 fixed 后代的 containing block，
+  // 内联渲染时视口坐标被解析为相对容器的坐标，菜单会跑到屏幕外。
+  return createPortal(
     <div
       ref={menuRef}
       className="dock-context-menu"
@@ -122,6 +125,7 @@ export default function DockContextMenu({ x, y, items, onClose }: DockContextMen
           {item.label}
         </button>
       ))}
-    </div>
+    </div>,
+    document.body,
   )
 }
