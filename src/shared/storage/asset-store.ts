@@ -6,6 +6,8 @@ import type { WallpaperAsset } from '../models/asset'
  */
 export interface AssetStore {
   get(assetId: string): Promise<WallpaperAsset | undefined>
+  /** 全量资产列表（壁纸库 UI 使用）。 */
+  list(): Promise<WallpaperAsset[]>
   put(asset: WallpaperAsset): Promise<void>
   remove(assetId: string): Promise<void>
 }

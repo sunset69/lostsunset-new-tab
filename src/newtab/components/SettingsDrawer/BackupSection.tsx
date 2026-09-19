@@ -33,6 +33,7 @@ const WALLPAPER_MODE_LABELS: Record<WallpaperMode, string> = {
   gradient: '渐变背景',
   builtin: '内置壁纸',
   upload: '本地壁纸',
+  random: '随机壁纸',
 }
 
 type WebDavForm = {

@@ -8,7 +8,7 @@ import { BACKUP_KIND, BACKUP_VERSION } from '../models/backup'
 import type { UserConfig } from '../models/config'
 import type { KeyValueStorage } from '../storage/key-value-storage'
 import { STORAGE_KEYS } from '../storage/storage-keys'
-import { parseUserConfig } from './config-schema'
+import { migrateConfig } from './migration'
 import type { AppError, AsyncResult } from '../utils/result'
 import { fail, ok } from '../utils/result'
 
@@ -56,7 +56,8 @@ export function parseBackup(raw: unknown): AsyncResult<ConfigBackupFile, AppErro
     return backupError('BACKUP_INVALID', 'exported-at-invalid')
   }
 
-  const parsedConfig = parseUserConfig(record.config)
+  // 旧版本配置（如 v1）经迁移链自动升级后再校验。
+  const parsedConfig = migrateConfig(record.config)
   if (!parsedConfig.ok) {
     const { code, message, cause } = parsedConfig.error
     return fail({ code, message: BACKUP_ERROR_MESSAGES[code] ?? message, cause })
@@ -89,7 +90,10 @@ export function summarizeBackup(backup: ConfigBackupFile): BackupSummary {
     environmentCount: environments.length,
     shortcutGroupCount: shortcutGroups.length,
     shortcutCount: shortcuts.length,
-    searchEngineName: settings.searchEngine.name,
+    searchEngineName:
+      settings.searchEngines.find((engine) => engine.id === settings.activeSearchEngineId)?.name ??
+      settings.searchEngines[0]?.name ??
+      '',
     wallpaperMode: settings.wallpaper.mode,
   }
 }

@@ -67,10 +67,46 @@ describe('parseBackup', () => {
   })
 
   it('拒绝内嵌配置结构损坏的备份', () => {
-    const broken = { ...backupFixture(), config: { ...backupFixture().config, version: 2 } }
+    const fixture = backupFixture()
+    const broken = {
+      ...fixture,
+      config: {
+        ...fixture.config,
+        settings: { ...fixture.config.settings, searchEngines: [] },
+      },
+    }
     const result = parseBackup(broken)
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe('CONFIG_SCHEMA_INVALID')
+  })
+
+  it('v1 旧备份的内嵌配置经迁移后通过校验', () => {
+    const legacy = {
+      ...backupFixture(),
+      config: {
+        version: 1,
+        updatedAt: now.toISOString(),
+        settings: {
+          activeEnvironmentId: 'env-default',
+          searchEngine: {
+            id: 'bing',
+            name: 'Bing',
+            searchUrlTemplate: 'https://www.bing.com/search?q={{query}}',
+          },
+          wallpaper: { mode: 'gradient', value: 'g', overlayOpacity: 0.28 },
+          dock: { iconSize: 44, showLabels: false },
+        },
+        environments: [{ id: 'env-default', name: '默认环境', variables: {} }],
+        shortcutGroups: [{ id: 'group-default', name: '常用网站', order: 0 }],
+        shortcuts: [],
+      },
+    }
+    const result = parseBackup(legacy)
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.data.config.version).toBe(2)
+      expect(result.data.config.settings.searchEngines).toHaveLength(1)
+    }
   })
 
   it('宽容未知附加字段并补默认 appVersion', () => {

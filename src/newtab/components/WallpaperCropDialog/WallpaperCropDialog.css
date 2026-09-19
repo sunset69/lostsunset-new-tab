@@ -1,0 +1,164 @@
+/* 裁剪弹层（0001 改善 1）：遮罩 + 居中对话框 + 可交互选框。 */
+
+.crop-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 6, 23, 0.55);
+  padding: 24px;
+}
+
+.crop-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(720px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 20px 22px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.96);
+  color: #e2e8f0;
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.5);
+}
+
+.crop-dialog__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.crop-dialog__stage-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  border-radius: 10px;
+  background: repeating-conic-gradient(#1e293b 0% 25%, #0f172a 0% 50%) 50% / 20px 20px;
+}
+
+.crop-dialog__stage {
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.crop-dialog__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.crop-dialog__box {
+  position: absolute;
+  cursor: move;
+  box-shadow: 0 0 0 9999px rgba(2, 6, 23, 0.55);
+  outline: 1px solid rgba(255, 255, 255, 0.9);
+  touch-action: none;
+}
+
+.crop-dialog__handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #2563eb;
+}
+
+.crop-dialog__handle--nw {
+  left: -7px;
+  top: -7px;
+  cursor: nwse-resize;
+}
+
+.crop-dialog__handle--ne {
+  right: -7px;
+  top: -7px;
+  cursor: nesw-resize;
+}
+
+.crop-dialog__handle--sw {
+  left: -7px;
+  bottom: -7px;
+  cursor: nesw-resize;
+}
+
+.crop-dialog__handle--se {
+  right: -7px;
+  bottom: -7px;
+  cursor: nwse-resize;
+}
+
+.crop-dialog__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.crop-dialog__ratios {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.crop-dialog__ratio {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.crop-dialog__ratio--active {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.22);
+}
+
+.crop-dialog__ratio:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+.crop-dialog__preview-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crop-dialog__preview-label {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.crop-dialog__preview {
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #0f172a;
+}
+
+.crop-dialog__error {
+  margin: 0;
+  font-size: 13px;
+  color: #fca5a5;
+}
+
+.crop-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crop-dialog,
+  .crop-dialog__ratio {
+    transition: none;
+  }
+}

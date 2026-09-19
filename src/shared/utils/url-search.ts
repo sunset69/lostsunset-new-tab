@@ -15,16 +15,29 @@ export const ALLOWED_SEARCH_PROTOCOLS = new Set(['http:', 'https:'])
 export function buildSearchUrl(searchUrlTemplate: string, query: string): string | null {
   const trimmed = query.trim()
   if (!trimmed) return null
+
+  const url = buildTemplateUrl(searchUrlTemplate, encodeURIComponent(trimmed))
+  return url ? url.toString() : null
+}
+
+/**
+ * 校验搜索 URL 模板：必须包含 {{query}} 占位符且为 http/https 地址。
+ * 配置校验与设置表单共用。
+ */
+export function isValidSearchTemplate(searchUrlTemplate: string): boolean {
+  return buildTemplateUrl(searchUrlTemplate, 'test') !== null
+}
+
+function buildTemplateUrl(searchUrlTemplate: string, encodedQuery: string): URL | null {
   if (!searchUrlTemplate.includes(SEARCH_QUERY_PLACEHOLDER)) return null
 
   let url: URL
   try {
-    url = new URL(searchUrlTemplate.replace(SEARCH_QUERY_PLACEHOLDER, encodeURIComponent(trimmed)))
+    url = new URL(searchUrlTemplate.replace(SEARCH_QUERY_PLACEHOLDER, encodedQuery))
   } catch {
     return null
   }
 
   if (!ALLOWED_SEARCH_PROTOCOLS.has(url.protocol)) return null
-
-  return url.toString()
+  return url
 }

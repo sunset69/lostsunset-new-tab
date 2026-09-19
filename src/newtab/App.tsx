@@ -48,7 +48,13 @@ export default function App() {
             </p>
           )}
           <ShortcutDock>
-            <SearchBar engine={config.settings.searchEngine} />
+            <SearchBar
+              engine={
+                config.settings.searchEngines.find(
+                  (item) => item.id === config.settings.activeSearchEngineId,
+                ) ?? config.settings.searchEngines[0]
+              }
+            />
           </ShortcutDock>
           {settingsOpen && (
             <SettingsDrawer

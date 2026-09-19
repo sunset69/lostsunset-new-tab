@@ -11,6 +11,8 @@
   background: rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  /* appearance: none 后原生 select 文字可被双击/拖选，出现蓝色选中高亮，需禁掉 */
+  user-select: none;
 }
 
 .env-switcher__dot {
@@ -31,6 +33,7 @@
   font: inherit;
   background: transparent;
   cursor: pointer;
+  user-select: none;
 }
 
 .env-switcher__select option {

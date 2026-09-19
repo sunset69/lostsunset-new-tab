@@ -1,5 +1,6 @@
 import type {
   Environment,
+  SearchEngine,
   Shortcut,
   ShortcutGroup,
   UserConfig,
@@ -8,6 +9,7 @@ import type {
 import { CONFIG_VERSION } from '../models/config'
 import type { AppError, AsyncResult } from '../utils/result'
 import { fail, ok } from '../utils/result'
+import { isValidSearchTemplate } from '../utils/url-search'
 
 /**
  * UserConfig 结构校验（设计文档 6.1）。
@@ -15,7 +17,7 @@ import { fail, ok } from '../utils/result'
  * 校验只拒绝会导致 UI 崩溃或数据损坏的结构问题，宽容未知的附加字段。
  */
 
-const WALLPAPER_MODES: readonly WallpaperMode[] = ['builtin', 'upload', 'gradient']
+const WALLPAPER_MODES: readonly WallpaperMode[] = ['builtin', 'upload', 'gradient', 'random']
 const ICON_TYPES = new Set(['favicon', 'builtin', 'emoji', 'custom'])
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -76,6 +78,21 @@ function validateShortcut(value: unknown): value is Shortcut {
   )
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+function validateSearchEngine(value: unknown): value is SearchEngine {
+  return (
+    isObject(value) &&
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.name) &&
+    isNonEmptyString(value.searchUrlTemplate) &&
+    isValidSearchTemplate(value.searchUrlTemplate) &&
+    (value.keyword === undefined || typeof value.keyword === 'string')
+  )
+}
+
 /** 解析任意来源（chrome.storage / JSON 导入）的原始值。 */
 export function parseUserConfig(raw: unknown): AsyncResult<UserConfig, AppError> {
   if (!isObject(raw)) {
@@ -93,14 +110,19 @@ export function parseUserConfig(raw: unknown): AsyncResult<UserConfig, AppError>
     return schemaError('settings-invalid')
   }
 
-  const searchEngine = settings.searchEngine
+  const searchEngines = settings.searchEngines
   if (
-    !isObject(searchEngine) ||
-    !isNonEmptyString(searchEngine.id) ||
-    !isNonEmptyString(searchEngine.name) ||
-    !isNonEmptyString(searchEngine.searchUrlTemplate)
+    !Array.isArray(searchEngines) ||
+    searchEngines.length === 0 ||
+    !searchEngines.every(validateSearchEngine)
   ) {
-    return schemaError('search-engine-invalid')
+    return schemaError('search-engines-invalid')
+  }
+  if (
+    !isNonEmptyString(settings.activeSearchEngineId) ||
+    !searchEngines.some((engine) => engine.id === settings.activeSearchEngineId)
+  ) {
+    return schemaError('active-search-engine-invalid')
   }
 
   const wallpaper = settings.wallpaper
@@ -113,6 +135,17 @@ export function parseUserConfig(raw: unknown): AsyncResult<UserConfig, AppError>
     !Number.isFinite(wallpaper.overlayOpacity)
   ) {
     return schemaError('wallpaper-invalid')
+  }
+
+  const randomPool = wallpaper.randomPool
+  if (
+    randomPool !== undefined &&
+    (!isObject(randomPool) ||
+      !isStringArray(randomPool.gradients) ||
+      !isStringArray(randomPool.builtinIds) ||
+      !isStringArray(randomPool.assetIds))
+  ) {
+    return schemaError('wallpaper-random-pool-invalid')
   }
 
   const dock = settings.dock

@@ -51,6 +51,12 @@ export const indexedDbAssetStore: AssetStore = {
     )
   },
 
+  async list() {
+    return withStore<WallpaperAsset[]>('readonly', (store) =>
+      store.getAll() as IDBRequest<WallpaperAsset[]>,
+    )
+  },
+
   async put(asset: WallpaperAsset) {
     await withStore<IDBValidKey>('readwrite', (store) => store.put(asset))
   },

@@ -7,4 +7,7 @@ export type WallpaperAsset = {
   name: string
   size: number
   createdAt: string
+  /** 图片尺寸（裁剪入库时已知；旧资产可能缺失），用于缩略图布局。 */
+  width?: number
+  height?: number
 }

@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ConfigProvider } from '../../config/config-context'
@@ -22,7 +22,7 @@ function renderSection(config: UserConfig) {
 
 function importedConfig(): UserConfig {
   const config = createDefaultConfig(new Date('2026-09-19T00:00:00.000Z'))
-  config.settings.searchEngine.name = '导入的引擎'
+  config.settings.searchEngines[0].name = '导入的引擎'
   config.environments.push({
     id: 'env-office',
     name: '办公',
@@ -85,7 +85,7 @@ describe('BackupSection', () => {
     })
 
     const saved = await storage.get<UserConfig>(STORAGE_KEYS.userConfig)
-    expect(saved!.settings.searchEngine.name).toBe('导入的引擎')
+    expect(saved!.settings.searchEngines[0].name).toBe('导入的引擎')
     expect(saved!.environments).toHaveLength(2)
 
     const autoBackup = JSON.parse(
@@ -93,7 +93,7 @@ describe('BackupSection', () => {
     ) as { reason: string; config: UserConfig } | null
     expect(autoBackup).not.toBeNull()
     expect(autoBackup!.reason).toBe('manual-import')
-    expect(autoBackup!.config.settings.searchEngine.name).toBe('Bing')
+    expect(autoBackup!.config.settings.searchEngines[0].name).toBe('Bing')
   })
 
   it('非法文件显示错误且不覆盖当前配置', async () => {
@@ -108,7 +108,7 @@ describe('BackupSection', () => {
       expect(screen.getByText('文件不是有效的配置备份')).not.toBeNull()
     })
     const saved = await storage.get<UserConfig>(STORAGE_KEYS.userConfig)
-    expect(saved!.settings.searchEngine.name).toBe('Bing')
+    expect(saved!.settings.searchEngines[0].name).toBe('Bing')
     expect(window.localStorage.getItem(STORAGE_KEYS.localBackupBeforeImport)).toBeNull()
   })
 

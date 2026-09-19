@@ -52,6 +52,7 @@ async () => {
 ```
 
 6. 已知交互细节：快捷方式删除是二次点击（按钮先变「确认删除？」）；抽屉可用 Esc 关闭；搜索按钮提交会真实跳转离开页面。
+7. **不要对 combobox/select 用 `click` 的 `dblClick`**——首次点击会打开原生弹层导致 "did not become interactive" 超时。排查「select 文字出现蓝色高亮」类样式问题：`appearance: none` 的 select 在 Chrome/Windows 下文字可被双击/拖选，先读 `window.getSelection()` 取证，修复用 `user-select: none`。
 
 ### 搜索跳转无法打桩
 

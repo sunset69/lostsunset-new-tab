@@ -295,11 +295,11 @@
   cursor: pointer;
 }
 
-.wallpaper-swatch--image {
+.wallpaper-cell--image {
   grid-column: span 2;
 }
 
-.wallpaper-swatch--active {
+.wallpaper-cell--active .wallpaper-swatch {
   border-color: #38bdf8;
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.6);
 }
@@ -340,6 +340,137 @@
   width: 100%;
   accent-color: #38bdf8;
   cursor: pointer;
+}
+
+/* 随机模式卡片 */
+.wallpaper-random {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wallpaper-random--active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.wallpaper-random:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.8);
+  outline-offset: 2px;
+}
+
+.wallpaper-random__icon {
+  font-size: 22px;
+}
+
+/* 缩略图容器：壁纸 + 随机勾选框 */
+.wallpaper-cell {
+  position: relative;
+}
+
+.wallpaper-cell__check {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(2, 6, 23, 0.6);
+  cursor: pointer;
+}
+
+.wallpaper-cell__check input {
+  width: 13px;
+  height: 13px;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+/* 我的壁纸（本地壁纸库） */
+.wallpaper-library {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wallpaper-library__item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+}
+
+.wallpaper-library__item--active {
+  border-color: #38bdf8;
+}
+
+.wallpaper-library__thumb {
+  width: 72px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #0b1020;
+}
+
+.wallpaper-library__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.wallpaper-library__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wallpaper-library__actions .wallpaper-cell__check {
+  position: static;
+  width: auto;
+  height: auto;
+  background: transparent;
+}
+
+.wallpaper-library__delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #f87171;
+  cursor: pointer;
+}
+
+.wallpaper-library__delete:hover {
+  background: rgba(248, 113, 113, 0.15);
+}
+
+.wallpaper-library__delete:focus-visible {
+  outline: 2px solid rgba(248, 113, 113, 0.8);
+  outline-offset: 2px;
 }
 
 /* ---------- 备份与同步 ---------- */

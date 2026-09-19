@@ -1,5 +1,5 @@
 import { DEFAULT_WALLPAPER, findBuiltinImage } from '../config/builtin-wallpapers'
-import type { UserConfig, WallpaperConfig } from '../models/config'
+import type { UserConfig, WallpaperConfig, WallpaperRandomPool } from '../models/config'
 import type { WallpaperAsset } from '../models/asset'
 import type { AssetStore } from '../storage/asset-store'
 import { createId } from '../utils/id'
@@ -7,8 +7,9 @@ import type { AppError, AsyncResult } from '../utils/result'
 import { fail, ok } from '../utils/result'
 
 /**
- * 壁纸业务服务（设计文档 6.1 / 6.4）。
- * 负责把配置解析为可渲染描述符、上传校验落库、旧资产清理与缺失回退。
+ * 壁纸业务服务（设计文档 6.1 / 6.4；0001 改善项 1/2/3）。
+ * 负责把配置解析为可渲染描述符、上传校验落库（壁纸库保留多资产）、
+ * 显式删除与缺失回退；随机模式在每次打开新标签页时抽签、不落盘。
  */
 
 export const ALLOWED_WALLPAPER_MIME = new Set(['image/png', 'image/jpeg', 'image/webp'])
@@ -30,6 +31,15 @@ export type ResolvedWallpaper = {
   recovered: boolean
 }
 
+/** 入库的图片输入：直接上传时由 File 派生；裁剪后由 Canvas 产出。 */
+export type WallpaperImageInput = {
+  blob: Blob
+  mimeType: string
+  name: string
+  width?: number
+  height?: number
+}
+
 function fallback(): ResolvedWallpaper {
   return {
     descriptor: { kind: 'gradient', css: DEFAULT_WALLPAPER.value },
@@ -41,6 +51,7 @@ function fallback(): ResolvedWallpaper {
 export async function resolveWallpaper(
   wallpaper: WallpaperConfig,
   assetStore: AssetStore,
+  random: () => number = Math.random,
 ): Promise<ResolvedWallpaper> {
   if (wallpaper.mode === 'gradient') {
     return { descriptor: { kind: 'gradient', css: wallpaper.value }, recovered: false }
@@ -54,6 +65,10 @@ export async function resolveWallpaper(
     return fallback()
   }
 
+  if (wallpaper.mode === 'random') {
+    return resolveRandom(wallpaper, assetStore, random)
+  }
+
   // upload 模式：资产缺失（例如新设备恢复备份）时回退默认渐变。
   const assetId = wallpaper.assetId ?? wallpaper.value
   const asset = await assetStore.get(assetId)
@@ -63,42 +78,90 @@ export async function resolveWallpaper(
   return { descriptor: { kind: 'image', source: 'upload', blob: asset.blob }, recovered: false }
 }
 
-/** 上传文件校验（设计文档 6.4 第 2 步）。 */
-export function validateImageFile(file: File): AsyncResult<{ blob: Blob; mimeType: string }> {
-  if (!ALLOWED_WALLPAPER_MIME.has(file.type)) {
+type RandomCandidate =
+  | { kind: 'gradient'; value: string }
+  | { kind: 'builtin'; value: string }
+  | { kind: 'asset'; value: string }
+
+async function resolveRandom(
+  wallpaper: WallpaperConfig,
+  assetStore: AssetStore,
+  random: () => number,
+): Promise<ResolvedWallpaper> {
+  const pool = wallpaper.randomPool ?? { gradients: [], builtinIds: [], assetIds: [] }
+  const candidates: RandomCandidate[] = [
+    ...pool.gradients.map((value): RandomCandidate => ({ kind: 'gradient', value })),
+    ...pool.builtinIds.map((value): RandomCandidate => ({ kind: 'builtin', value })),
+    ...pool.assetIds.map((value): RandomCandidate => ({ kind: 'asset', value })),
+  ]
+
+  if (candidates.length === 0) {
+    return fallback()
+  }
+
+  const pick = candidates[Math.min(candidates.length - 1, Math.floor(random() * candidates.length))]
+
+  if (pick.kind === 'gradient') {
+    return { descriptor: { kind: 'gradient', css: pick.value }, recovered: false }
+  }
+  if (pick.kind === 'builtin') {
+    const preset = findBuiltinImage(pick.value)
+    if (preset) {
+      return { descriptor: { kind: 'image', source: 'builtin', url: preset.url }, recovered: false }
+    }
+    return fallback()
+  }
+
+  const asset = await assetStore.get(pick.value)
+  if (!asset) {
+    return { ...fallback(), recovered: true }
+  }
+  return { descriptor: { kind: 'image', source: 'upload', blob: asset.blob }, recovered: false }
+}
+
+/** 图片输入校验（设计文档 6.4 第 2 步；File 与裁剪产物共用）。 */
+export function validateImageInput(
+  input: WallpaperImageInput,
+): AsyncResult<WallpaperImageInput, AppError> {
+  if (!ALLOWED_WALLPAPER_MIME.has(input.mimeType)) {
     return fail({
       code: 'WALLPAPER_FILE_TYPE_UNSUPPORTED',
       message: WALLPAPER_ERROR_MESSAGES.WALLPAPER_FILE_TYPE_UNSUPPORTED,
     } satisfies AppError)
   }
-  if (file.size === 0) {
+  if (input.blob.size === 0) {
     return fail({
       code: 'WALLPAPER_FILE_EMPTY',
       message: WALLPAPER_ERROR_MESSAGES.WALLPAPER_FILE_EMPTY,
     } satisfies AppError)
   }
-  if (file.size > MAX_WALLPAPER_SIZE) {
+  if (input.blob.size > MAX_WALLPAPER_SIZE) {
     return fail({
       code: 'WALLPAPER_FILE_TOO_LARGE',
       message: WALLPAPER_ERROR_MESSAGES.WALLPAPER_FILE_TOO_LARGE,
-      cause: { maxSize: MAX_WALLPAPER_SIZE, actualSize: file.size },
+      cause: { maxSize: MAX_WALLPAPER_SIZE, actualSize: input.blob.size },
     } satisfies AppError)
   }
-  return ok({ blob: file, mimeType: file.type })
+  return ok(input)
+}
+
+/** 校验用户选取的文件（上传入口第一步，之后进入裁剪）。 */
+export function validateImageFile(file: File): AsyncResult<{ blob: Blob; mimeType: string }> {
+  return validateImageInput({ blob: file, mimeType: file.type, name: file.name })
 }
 
 /**
- * 保存上传壁纸（设计文档 6.4）：
- * 校验 → 写入资产 → 切换配置引用 → 尽力清理旧上传资产。
+ * 把图片加入壁纸库并切换为当前壁纸（0001 改善 2）：
+ * 校验 → 写入资产 → 切换配置引用。**不删除**任何旧资产，库中可多张复用。
  * 返回新的配置对象，不修改入参。
  */
-export async function saveUploadedWallpaper(
+export async function addWallpaperAsset(
   current: UserConfig,
-  file: File,
+  input: WallpaperImageInput,
   assetStore: AssetStore,
   now: Date = new Date(),
 ): Promise<AsyncResult<UserConfig>> {
-  const checked = validateImageFile(file)
+  const checked = validateImageInput(input)
   if (!checked.ok) {
     return fail(checked.error)
   }
@@ -107,16 +170,13 @@ export async function saveUploadedWallpaper(
     id: createId('wallpaper'),
     blob: checked.data.blob,
     mimeType: checked.data.mimeType,
-    name: file.name,
-    size: file.size,
+    name: checked.data.name,
+    size: checked.data.blob.size,
     createdAt: now.toISOString(),
+    width: checked.data.width,
+    height: checked.data.height,
   }
   await assetStore.put(asset)
-
-  const previousAssetId =
-    current.settings.wallpaper.mode === 'upload'
-      ? (current.settings.wallpaper.assetId ?? current.settings.wallpaper.value)
-      : null
 
   const next: UserConfig = structuredClone(current)
   next.settings.wallpaper = {
@@ -124,39 +184,58 @@ export async function saveUploadedWallpaper(
     value: asset.id,
     assetId: asset.id,
     overlayOpacity: current.settings.wallpaper.overlayOpacity,
+    randomPool: current.settings.wallpaper.randomPool,
   }
-
-  // 旧资产确认已无引用后清理；清理失败不阻断切换。
-  if (previousAssetId && previousAssetId !== asset.id) {
-    await assetStore.remove(previousAssetId).catch(() => undefined)
-  }
-
   return ok(next)
 }
 
-/** 切换为渐变或内置图片预设，返回新配置；并清理被替换的上传资产。 */
+/**
+ * 从壁纸库删除资产（0001 改善 2）。
+ * 若删除的是当前使用中的壁纸，先把配置回退为默认渐变再删。
+ */
+export async function removeWallpaperAsset(
+  current: UserConfig,
+  assetId: string,
+  assetStore: AssetStore,
+): Promise<UserConfig> {
+  const next: UserConfig = structuredClone(current)
+  const wallpaper = next.settings.wallpaper
+  const activeAssetId = wallpaper.mode === 'upload' ? (wallpaper.assetId ?? wallpaper.value) : null
+
+  if (activeAssetId === assetId) {
+    next.settings.wallpaper = {
+      mode: 'gradient',
+      value: DEFAULT_WALLPAPER.value,
+      overlayOpacity: wallpaper.overlayOpacity,
+      randomPool: wallpaper.randomPool,
+    }
+  }
+
+  await assetStore.remove(assetId).catch(() => undefined)
+  return next
+}
+
+/** 切换为渐变或内置图片预设，返回新配置（v2 起不再清理库中资产）。 */
 export async function applyPresetWallpaper(
   current: UserConfig,
   preset:
     | { mode: 'gradient'; value: string }
     | { mode: 'builtin'; value: string },
-  assetStore: AssetStore,
 ): Promise<UserConfig> {
-  const previousAssetId =
-    current.settings.wallpaper.mode === 'upload'
-      ? (current.settings.wallpaper.assetId ?? current.settings.wallpaper.value)
-      : null
-
   const next: UserConfig = structuredClone(current)
   next.settings.wallpaper = {
     mode: preset.mode,
     value: preset.value,
     overlayOpacity: current.settings.wallpaper.overlayOpacity,
+    randomPool: current.settings.wallpaper.randomPool,
   }
+  return next
+}
 
-  if (previousAssetId) {
-    await assetStore.remove(previousAssetId).catch(() => undefined)
-  }
+/** 更新随机池勾选（0001 改善 3），返回新配置；不修改入参。 */
+export function setRandomPool(current: UserConfig, pool: WallpaperRandomPool): UserConfig {
+  const next: UserConfig = structuredClone(current)
+  next.settings.wallpaper.randomPool = pool
   return next
 }
 

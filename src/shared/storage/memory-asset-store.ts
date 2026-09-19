@@ -9,6 +9,9 @@ export function createMemoryAssetStore(initial: Record<string, WallpaperAsset> =
     async get(assetId) {
       return map.get(assetId)
     },
+    async list() {
+      return [...map.values()]
+    },
     async put(asset) {
       map.set(asset.id, asset)
     },

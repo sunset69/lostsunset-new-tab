@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { useConfig } from '../../config/config-context'
 import { buildSearchUrl } from '../../../shared/utils/url-search'
 
-/** 搜索引擎设置（设计文档 2.1.2）。 */
+/** 搜索引擎设置（设计文档 2.1.2；阶段二重构为列表 CRUD）。 */
 export default function SearchEngineSection() {
   const { config, updateConfig } = useConfig()
-  const engine = config!.settings.searchEngine
+  const settings = config!.settings
+  const engine =
+    settings.searchEngines.find((item) => item.id === settings.activeSearchEngineId) ??
+    settings.searchEngines[0]
 
   const [name, setName] = useState(engine.name)
   const [template, setTemplate] = useState(engine.searchUrlTemplate)
@@ -25,10 +28,10 @@ export default function SearchEngineSection() {
     }
     setError(null)
     void updateConfig((draft) => {
-      draft.settings.searchEngine = {
-        id: engine.id,
-        name: name.trim(),
-        searchUrlTemplate: template.trim(),
+      const target = draft.settings.searchEngines.find((item) => item.id === engine.id)
+      if (target) {
+        target.name = name.trim()
+        target.searchUrlTemplate = template.trim()
       }
     })
   }

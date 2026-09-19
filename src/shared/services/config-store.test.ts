@@ -14,7 +14,7 @@ describe('ConfigStore', () => {
     expect(outcome.config.environments).toHaveLength(1)
 
     const persisted = await storage.get(STORAGE_KEYS.userConfig)
-    expect(persisted).toMatchObject({ version: 1 })
+    expect(persisted).toMatchObject({ version: 2 })
   })
 
   it('已存在的合法配置直接返回', async () => {

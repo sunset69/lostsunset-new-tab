@@ -1,18 +1,27 @@
 /**
  * 用户配置领域模型（设计文档第 5 节）。
- * 首期只包含 v1；后续版本通过显式迁移函数升级。
+ * 当前为 v2（0001 改善项）；v1 通过迁移链升级。
  */
 
-export const CONFIG_VERSION = 1 as const
+export const CONFIG_VERSION = 2 as const
 
 export type SearchEngine = {
   id: string
   name: string
   /** 必须包含 {{query}} 占位符，例如 https://www.bing.com/search?q={{query}} */
   searchUrlTemplate: string
+  /** 输入该关键词 + 空格可临时切换到此引擎；空/缺省表示不支持。 */
+  keyword?: string
 }
 
-export type WallpaperMode = 'builtin' | 'upload' | 'gradient'
+export type WallpaperMode = 'builtin' | 'upload' | 'gradient' | 'random'
+
+/** 随机壁纸候选池：三类来源各自勾选，抽签时合并。 */
+export type WallpaperRandomPool = {
+  gradients: string[]
+  builtinIds: string[]
+  assetIds: string[]
+}
 
 export type WallpaperConfig = {
   mode: WallpaperMode
@@ -22,6 +31,8 @@ export type WallpaperConfig = {
   /** 遮罩不透明度，取值 0-1，用于保证文字可读性 */
   overlayOpacity: number
   blur?: number
+  /** mode='random' 时的抽签池；允许为空（运行时回退默认渐变）。 */
+  randomPool?: WallpaperRandomPool
 }
 
 export type DockConfig = {
@@ -60,7 +71,9 @@ export type Shortcut = {
 
 export type UserSettings = {
   activeEnvironmentId: string
-  searchEngine: SearchEngine
+  /** 可选搜索引擎列表（0001 改善 4/5）；activeSearchEngineId 必须指向其中一项。 */
+  searchEngines: SearchEngine[]
+  activeSearchEngineId: string
   wallpaper: WallpaperConfig
   dock: DockConfig
 }
