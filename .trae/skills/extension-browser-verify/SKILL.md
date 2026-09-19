@@ -94,6 +94,7 @@ async () => {
 
 ## 8. 环境已知坑
 
+- 长流程走查直接用 `run_mcp` 调 `mcp_chrome-devtools-mcp`（`type_text`/`press_key` 是真实键盘事件，React 19 受控输入必须靠它）；不要委托 browser_use 子代理跑长脚本——它会在任务中途截断返回，且其键盘注入对 React 输入框不可靠。服务名与工具描述符在 `~/.trae-cn/mcps/<workspace>/solo_agent/mcp_chrome-devtools-mcp/`。
 - Node 25 自带的 `localStorage` 是需 `--localstorage-file` 的空壳，jsdom 会透传；测试里用 `src/test/local-storage-shim.ts`，浏览器 MCP 里它是真实实现不受影响。
 - 不要用 `vi.stubGlobal('URL', { ...URL })`，展开会丢失构造能力导致 `new URL()` 抛错；只改静态方法（`URL.createObjectURL = vi.fn(...)`）。
 - vitest 锁 4.1.11、jsdom 29.1.1；tsx 测试顶部加 `// @vitest-environment jsdom`，且必须 `import { describe, it } from 'vitest'`。
