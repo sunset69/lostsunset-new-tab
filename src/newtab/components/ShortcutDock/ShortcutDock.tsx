@@ -10,6 +10,8 @@ import './ShortcutDock.css'
 
 export type ShortcutDockProps = {
   children: ReactNode
+  /** 点击「+」请求打开快捷添加弹窗（弹窗由 App 持有，供拖拽预填复用）。 */
+  onRequestAdd: () => void
 }
 
 /** 取最终 URL 同源的 /favicon.ico，避免把内网域名泄露给第三方图标服务。 */
@@ -57,13 +59,19 @@ function ShortcutIcon({ shortcut, resolvedUrl }: { shortcut: Shortcut; resolvedU
  * 顶部槽位承载搜索框；下方为当前环境下解析出的快捷方式。
  * 半透明背景色是 backdrop-filter 不可用时的兜底。
  */
-export default function ShortcutDock({ children }: ShortcutDockProps) {
+export default function ShortcutDock({ children, onRequestAdd }: ShortcutDockProps) {
   const { config } = useConfig()
+  // 分组筛选（0001 改善 7）：本地状态，不跨会话持久化。
+  const [activeTab, setActiveTab] = useState<string>('all')
 
   if (!config) {
     return null
   }
 
+  const groups = [...config.shortcutGroups].sort((a, b) => a.order - b.order)
+  // 选中分组被删除后回退「全部」。
+  const effectiveTab =
+    activeTab !== 'all' && groups.some((group) => group.id === activeTab) ? activeTab : 'all'
   const activeEnvironment =
     config.environments.find((env) => env.id === config.settings.activeEnvironmentId) ??
     config.environments[0]
@@ -72,15 +80,55 @@ export default function ShortcutDock({ children }: ShortcutDockProps) {
   const showLabels = config.settings.dock.showLabels
 
   const sorted = [...config.shortcuts].sort((a, b) => a.order - b.order)
+  const filtered = effectiveTab === 'all' ? sorted : sorted.filter((s) => s.groupId === effectiveTab)
+  const addSize = Math.max(iconSize, 48)
+
+  const addButton = (
+    <button
+      type="button"
+      className="shortcut-dock__add"
+      style={{ width: addSize, height: addSize }}
+      aria-label="添加快捷方式"
+      title="添加快捷方式"
+      onClick={onRequestAdd}
+    >
+      +
+    </button>
+  )
 
   return (
     <div className="shortcut-dock">
       {children}
-      {sorted.length === 0 ? (
-        <p className="shortcut-dock__empty">还没有快捷方式，点击右上角「设置」添加常用网站</p>
-      ) : (
-        <ul className="shortcut-dock__row">
-          {sorted.map((shortcut) => {
+      {groups.length > 1 && (
+        <div className="shortcut-dock__tabs" role="toolbar" aria-label="快捷方式分组筛选">
+          <button
+            type="button"
+            className={`shortcut-dock__tab${effectiveTab === 'all' ? ' shortcut-dock__tab--active' : ''}`}
+            aria-pressed={effectiveTab === 'all'}
+            onClick={() => setActiveTab('all')}
+          >
+            全部
+          </button>
+          {groups.map((group) => (
+            <button
+              key={group.id}
+              type="button"
+              className={`shortcut-dock__tab${effectiveTab === group.id ? ' shortcut-dock__tab--active' : ''}`}
+              aria-pressed={effectiveTab === group.id}
+              onClick={() => setActiveTab(group.id)}
+            >
+              {group.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {filtered.length === 0 && (
+        <p className="shortcut-dock__empty">
+          {effectiveTab === 'all' ? '还没有快捷方式，点击下方「+」添加常用网站' : '该分组还没有快捷方式'}
+        </p>
+      )}
+      <ul className="shortcut-dock__row">
+        {filtered.map((shortcut) => {
             const resolved = resolveShortcutUrl(shortcut.urlTemplate, variables)
 
             if (!resolved.ok) {
@@ -126,8 +174,8 @@ export default function ShortcutDock({ children }: ShortcutDockProps) {
               </li>
             )
           })}
-        </ul>
-      )}
+          <li className="shortcut-dock__cell">{addButton}</li>
+      </ul>
     </div>
   )
 }

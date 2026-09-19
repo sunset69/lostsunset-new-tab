@@ -1,4 +1,4 @@
-import type { SearchEngine, UserConfig } from '../models/config'
+import type { SearchEngine, Shortcut, UserConfig } from '../models/config'
 import { CONFIG_VERSION } from '../models/config'
 import { BUILTIN_IMAGE_PRESETS, GRADIENT_PRESETS } from './builtin-wallpapers'
 import { createId } from '../utils/id'
@@ -97,7 +97,7 @@ export function createEnvironmentDraft(name: string) {
 }
 
 /** 生成空白快捷方式的工厂（设置表单使用）。 */
-export function createShortcutDraft(groupId: string, order: number) {
+export function createShortcutDraft(groupId: string, order: number): Shortcut {
   return {
     id: createId('shortcut'),
     groupId,

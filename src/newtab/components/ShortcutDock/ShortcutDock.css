@@ -110,6 +110,78 @@
   text-align: center;
 }
 
+/* 分组筛选 tab 条（0001 改善 7）：仅分组数 > 1 时渲染。 */
+.shortcut-dock__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.shortcut-dock__tab {
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12.5px;
+  line-height: 1.4;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.shortcut-dock__tab:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.shortcut-dock__tab:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+}
+
+.shortcut-dock__tab--active {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 尾部「+」快捷添加按钮（0001 改善 6a）。 */
+.shortcut-dock__add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 22px;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.shortcut-dock__add:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+.shortcut-dock__add:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shortcut-dock__item,
+  .shortcut-dock__add,
+  .shortcut-dock__tab {
+    transition: none;
+  }
+}
+
 @media (max-width: 700px) {
   .shortcut-dock {
     padding: 12px 14px;
