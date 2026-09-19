@@ -1,0 +1,66 @@
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 6px 8px 6px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.search-bar:focus-within {
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.search-bar__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.search-bar__input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 强制高对比焦点样式（不依赖默认 outline） */
+.search-bar__input:focus-visible {
+  outline: none;
+}
+
+.search-bar__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.search-bar__submit:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.search-bar__submit:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}

@@ -1,0 +1,57 @@
+.env-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 30px 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13px;
+  background: rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.env-switcher__dot {
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.env-switcher__select {
+  appearance: none;
+  -webkit-appearance: none;
+  max-width: 200px;
+  padding: 0;
+  border: 0;
+  color: #fff;
+  font: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.env-switcher__select option {
+  color: #e2e8f0;
+  background: #0f172a;
+}
+
+.env-switcher::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-65%) rotate(45deg);
+  pointer-events: none;
+}
+
+.env-switcher:focus-within {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 2px;
+}

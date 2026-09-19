@@ -1,0 +1,126 @@
+.shortcut-dock {
+  position: fixed;
+  left: clamp(12px, 2vw, 20px);
+  right: clamp(12px, 2vw, 20px);
+  bottom: clamp(12px, 2.5vh, 20px);
+  z-index: 1;
+  padding: 14px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 22px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .shortcut-dock {
+    background: rgba(0, 0, 0, 0.55);
+  }
+}
+
+.shortcut-dock__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shortcut-dock__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.shortcut-dock__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  color: #fff;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.14);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.shortcut-dock__item:hover {
+  background: rgba(255, 255, 255, 0.24);
+  transform: translateY(-2px);
+}
+
+.shortcut-dock__item:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+}
+
+.shortcut-dock__item--error {
+  border-style: dashed;
+  border-color: rgba(248, 113, 113, 0.7);
+  background: rgba(127, 29, 29, 0.35);
+  cursor: help;
+}
+
+.shortcut-dock__item--error:hover {
+  transform: none;
+}
+
+.shortcut-dock__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.shortcut-dock__icon--img {
+  object-fit: cover;
+  padding: 8px;
+}
+
+.shortcut-dock__icon--emoji {
+  font-size: 22px;
+}
+
+.shortcut-dock__icon--text {
+  font-size: 16px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.shortcut-dock__label {
+  max-width: 64px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shortcut-dock__empty {
+  margin: 14px 0 2px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .shortcut-dock {
+    padding: 12px 14px;
+  }
+
+  .shortcut-dock__row {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .shortcut-dock__cell {
+    flex-shrink: 0;
+  }
+}

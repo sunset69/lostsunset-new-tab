@@ -1,0 +1,69 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    'PingFang SC',
+    'Microsoft YaHei',
+    sans-serif;
+  line-height: 1.5;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  color: #fff;
+}
+
+.page__notice {
+  position: fixed;
+  top: clamp(56px, 8vh, 72px);
+  left: 50%;
+  z-index: 2;
+  margin: 0;
+  padding: 8px 16px;
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  border-radius: 999px;
+  color: #fde68a;
+  font-size: 13px;
+  background: rgba(120, 53, 15, 0.7);
+  transform: translateX(-50%);
+}
+
+/* 仅供屏幕阅读器的内容：视觉上隐藏但保留在无障碍树中 */
+.visually-hidden {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}

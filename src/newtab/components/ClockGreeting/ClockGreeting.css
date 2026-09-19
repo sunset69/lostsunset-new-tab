@@ -1,0 +1,29 @@
+.clock-block {
+  position: fixed;
+  left: clamp(20px, 3vw, 32px);
+  bottom: clamp(140px, 18vh, 168px);
+  z-index: 1;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.clock-block__time {
+  display: block;
+  font-size: clamp(48px, 7vw, 84px);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock-block__meta {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+@media (max-width: 700px) {
+  .clock-block {
+    bottom: 190px;
+  }
+}

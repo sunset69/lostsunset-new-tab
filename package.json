@@ -1,0 +1,39 @@
+{
+  "name": "lostsunset-new-tab",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "沉浸式壁纸、快捷方式与内网环境地址管理的 Chrome/Edge 新标签页扩展",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "icons:generate": "node scripts/generate-icons.mjs",
+    "package": "node scripts/package-extension.mjs",
+    "release": "npm run build && npm run package"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "2.7.1",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.3",
+    "jsdom": "29.1.1",
+    "@types/chrome": "^0.3.0",
+    "@types/node": "^26.6.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "typescript": "^7.0.2",
+    "vite": "^7.3.6",
+    "vitest": "4.1.11"
+  }
+}
