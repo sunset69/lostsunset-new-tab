@@ -1,60 +1,172 @@
+/* 环境切换器（002 改善 1：玻璃拟态 chip + 自定义 listbox 菜单） */
+
 .env-switcher {
   position: relative;
   display: inline-flex;
+}
+
+.env-switcher__chip {
+  display: inline-flex;
   align-items: center;
-  min-height: 34px;
-  padding: 0 30px 0 14px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  gap: 8px;
+  min-height: 36px;
+  max-width: 220px;
+  padding: 0 12px 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   color: #fff;
   font-size: 13px;
-  background: rgba(0, 0, 0, 0.24);
+  line-height: 1.4;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 4px 14px rgba(2, 6, 23, 0.28);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  /* appearance: none 后原生 select 文字可被双击/拖选，出现蓝色选中高亮，需禁掉 */
+  cursor: pointer;
   user-select: none;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.env-switcher__chip:hover {
+  border-color: rgba(255, 255, 255, 0.42);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.12));
+}
+
+.env-switcher__chip:active {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 2px 6px rgba(2, 6, 23, 0.35);
+}
+
+.env-switcher__chip:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: 2px;
+}
+
+.env-switcher__chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .env-switcher__dot {
   width: 8px;
   height: 8px;
-  margin-right: 8px;
-  border-radius: 50%;
   flex-shrink: 0;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.22),
+    0 0 8px currentColor;
 }
 
-.env-switcher__select {
-  appearance: none;
-  -webkit-appearance: none;
-  max-width: 200px;
-  padding: 0;
+.env-switcher__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.env-switcher__chevron {
+  flex-shrink: 0;
+  opacity: 0.85;
+  transition: transform 0.18s ease;
+}
+
+.env-switcher__chevron--open {
+  transform: rotate(180deg);
+}
+
+/* 下拉菜单 */
+.env-switcher__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  min-width: 190px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.96);
+  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.5);
+  transform-origin: top left;
+  animation: env-switcher-pop 0.16s ease;
+}
+
+@keyframes env-switcher-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.env-switcher__item {
+  list-style: none;
+}
+
+.env-switcher__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
   border: 0;
-  color: #fff;
-  font: inherit;
+  border-radius: 9px;
   background: transparent;
+  color: #e2e8f0;
+  font-size: 13px;
+  text-align: left;
   cursor: pointer;
+}
+
+.env-switcher__option:hover,
+.env-switcher__option:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.env-switcher__option:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: -2px;
+}
+
+.env-switcher__option--active {
+  color: #7dd3fc;
+}
+
+.env-switcher__option-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.env-switcher__option-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   user-select: none;
 }
 
-.env-switcher__select option {
-  color: #e2e8f0;
-  background: #0f172a;
+.env-switcher__check {
+  flex-shrink: 0;
 }
 
-.env-switcher::after {
-  content: '';
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  width: 7px;
-  height: 7px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: translateY(-65%) rotate(45deg);
-  pointer-events: none;
-}
+@media (prefers-reduced-motion: reduce) {
+  .env-switcher__chip,
+  .env-switcher__chevron {
+    transition: none;
+  }
 
-.env-switcher:focus-within {
-  outline: 2px solid rgba(255, 255, 255, 0.8);
-  outline-offset: 2px;
+  .env-switcher__menu {
+    animation: none;
+  }
 }

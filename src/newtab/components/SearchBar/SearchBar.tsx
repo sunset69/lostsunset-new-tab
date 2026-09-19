@@ -23,6 +23,10 @@ const defaultNavigate = (url: string): void => {
  * 底部 Dock 中的搜索框（设计文档 2.1.2；0001 改善 4/5）。
  * 左端引擎徽标可切换默认引擎；输入「keyword + 空格」临时切换引擎，
  * 提交后恢复默认；原生 form 提交保证中文输入法组词期间回车不误提交。
+ *
+ * 状态语义（002 问题 1 修复）：临时引擎只由一个稳定 id 表达——
+ * 输入框被清空时立即复位为默认引擎；keyword 可以连续切换到任意非当前引擎，
+ * 不会出现「切换一次后锁死」的状态。
  */
 export default function SearchBar({
   engines,
@@ -32,15 +36,18 @@ export default function SearchBar({
   onNavigate = defaultNavigate,
 }: SearchBarProps) {
   const [query, setQuery] = useState('')
-  const [overrideEngine, setOverrideEngine] = useState<SearchEngine | null>(null)
+  const [overrideEngineId, setOverrideEngineId] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
   const activeEngine = engines.find((engine) => engine.id === activeEngineId) ?? engines[0]
+  // 临时引擎若已从列表中删除（设置中删引擎），自然回退默认引擎。
+  const overrideEngine =
+    overrideEngineId !== null
+      ? (engines.find((engine) => engine.id === overrideEngineId) ?? null)
+      : null
   const effectiveEngine = overrideEngine ?? activeEngine
-  const keywordCandidates = engines.filter(
-    (engine) => engine.id !== activeEngine.id && engine.id !== overrideEngine?.id,
-  )
+  const keywordCandidates = engines.filter((engine) => engine.id !== effectiveEngine.id)
 
   // 点击组件外部关闭引擎菜单。
   useEffect(() => {
@@ -64,9 +71,18 @@ export default function SearchBar({
   }, [menuOpen])
 
   function handleInputChange(value: string) {
+    // 清空输入：解除临时引擎，徽标回到默认引擎（明确的逃生路径）。
+    if (value === '') {
+      setQuery('')
+      setOverrideEngineId(null)
+      return
+    }
+
+    // 每次按键都基于「当前生效引擎」计算候选，keyword 可连续切换。
     const match = matchEngineKeyword(value, keywordCandidates)
-    if (match && overrideEngine === null) {
-      setOverrideEngine(match.engine)
+    if (match) {
+      // 命中默认引擎时直接复位，而不是再挂一个等价的临时态。
+      setOverrideEngineId(match.engine.id === activeEngine.id ? null : match.engine.id)
       setQuery(match.rest)
       return
     }
@@ -78,17 +94,20 @@ export default function SearchBar({
     if (!effectiveEngine) return
     const url = buildSearchUrl(effectiveEngine.searchUrlTemplate, query)
     if (!url) return
-    setOverrideEngine(null)
+    setOverrideEngineId(null)
     onNavigate(url)
   }
 
   function selectEngine(id: string) {
     setMenuOpen(false)
-    setOverrideEngine(null)
+    setOverrideEngineId(null)
     onChangeEngine(id)
   }
 
   const hintEngine = findKeywordHint(query, keywordCandidates)
+  const badgeLabel = effectiveEngine
+    ? `切换搜索引擎（当前：${effectiveEngine.name}${overrideEngine ? '·临时' : ''}）`
+    : '切换搜索引擎'
 
   return (
     <div className="search-bar" ref={rootRef}>
@@ -96,13 +115,20 @@ export default function SearchBar({
         {effectiveEngine && (
           <button
             type="button"
-            className="search-bar__engine"
+            className={`search-bar__engine${overrideEngine ? ' search-bar__engine--temp' : ''}`}
             aria-haspopup="listbox"
             aria-expanded={menuOpen}
-            aria-label={`切换搜索引擎（当前：${effectiveEngine.name}）`}
-            title={`切换搜索引擎（当前：${effectiveEngine.name}）`}
+            aria-label={badgeLabel}
+            title={
+              overrideEngine
+                ? `临时使用 ${effectiveEngine.name} 搜索，提交或清空输入后恢复 ${activeEngine?.name ?? ''}`
+                : badgeLabel
+            }
             onClick={() => setMenuOpen((open) => !open)}
           >
+            {overrideEngine && (
+              <span className="search-bar__engine-dot" aria-hidden="true" />
+            )}
             <span className="search-bar__engine-name">{effectiveEngine.name}</span>
             <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false">
               <path d="m6 9 6 6 6-6H6Z" fill="currentColor" />
@@ -150,8 +176,8 @@ export default function SearchBar({
               <button
                 type="button"
                 role="option"
-                aria-selected={engine.id === activeEngine.id}
-                className={`search-bar__option${engine.id === activeEngine.id ? ' search-bar__option--active' : ''}`}
+                aria-selected={engine.id === effectiveEngine.id}
+                className={`search-bar__option${engine.id === effectiveEngine.id ? ' search-bar__option--active' : ''}`}
                 onClick={() => selectEngine(engine.id)}
               >
                 <span className="search-bar__option-name">{engine.name}</span>

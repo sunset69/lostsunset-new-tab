@@ -26,6 +26,14 @@ async function readShortcuts(storage: ReturnType<typeof createMemoryStorage>) {
   return config?.shortcuts ?? []
 }
 
+async function readGroups(storage: ReturnType<typeof createMemoryStorage>) {
+  const config = await storage.get<UserConfig>(STORAGE_KEYS.userConfig)
+  return config?.shortcutGroups ?? []
+}
+
+const groupControl = () => screen.getByLabelText('分组') as HTMLSelectElement
+const NEW_GROUP_VALUE = '__new_group__'
+
 describe('ShortcutQuickAdd 基础交互', () => {
   it('渲染弹窗与表单，焦点落在网址输入框', async () => {
     await setup()
@@ -119,6 +127,74 @@ describe('ShortcutQuickAdd 提交', () => {
     })
     const [shortcut] = await readShortcuts(storage)
     expect(shortcut.icon).toEqual({ type: 'emoji', value: '🛠️' })
+  })
+
+  it('快速新建分组后提交的快捷方式落入新分组（002 改善 2）', async () => {
+    const { onClose, storage } = await setup()
+
+    fireEvent.change(groupControl(), { target: { value: NEW_GROUP_VALUE } })
+    const groupNameInput = (await screen.findByLabelText('分组')) as HTMLInputElement
+    fireEvent.change(groupNameInput, { target: { value: '工作' } })
+    fireEvent.click(screen.getByRole('button', { name: '确认' }))
+
+    const newId = await waitFor(async () => {
+      const groups = await readGroups(storage)
+      expect(groups).toHaveLength(2)
+      return groups.find((group) => group.name === '工作')!.id
+    })
+    // 下拉回来并自动选中新分组，order 接续。
+    expect(groupControl().value).toBe(newId)
+    const groups = await readGroups(storage)
+    expect(groups.find((group) => group.id === newId)?.order).toBe(1)
+
+    fireEvent.change(screen.getByLabelText('网址'), {
+      target: { value: 'https://work.example.com' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '添加' }))
+
+    await waitFor(async () => {
+      expect(await readShortcuts(storage)).toHaveLength(1)
+    })
+    const [shortcut] = await readShortcuts(storage)
+    expect(shortcut.groupId).toBe(newId)
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('新分组名称为空时报错且不创建', async () => {
+    const { storage } = await setup()
+
+    fireEvent.change(groupControl(), { target: { value: NEW_GROUP_VALUE } })
+    await screen.findByLabelText('分组')
+    fireEvent.click(screen.getByRole('button', { name: '确认' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('分组名称不能为空')
+    expect(await readGroups(storage)).toHaveLength(1)
+  })
+
+  it('新分组与已有分组同名时报错', async () => {
+    const { storage } = await setup()
+
+    fireEvent.change(groupControl(), { target: { value: NEW_GROUP_VALUE } })
+    const groupNameInput = (await screen.findByLabelText('分组')) as HTMLInputElement
+    fireEvent.change(groupNameInput, { target: { value: '常用网站' } })
+    fireEvent.click(screen.getByRole('button', { name: '确认' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('已存在同名分组')
+    expect(await readGroups(storage)).toHaveLength(1)
+  })
+
+  it('建组输入框内 Escape 仅取消建组，不关闭弹窗', async () => {
+    const { onClose } = await setup()
+
+    fireEvent.change(groupControl(), { target: { value: NEW_GROUP_VALUE } })
+    const groupNameInput = (await screen.findByLabelText('分组')) as HTMLInputElement
+    fireEvent.keyDown(groupNameInput, { key: 'Escape' })
+
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog', { name: '添加快捷方式' })).not.toBeNull()
+    expect(groupControl().value).toBe('group-default')
   })
 
   it('选择首字母图标时 icon 类型为 custom', async () => {

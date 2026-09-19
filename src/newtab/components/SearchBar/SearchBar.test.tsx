@@ -137,4 +137,50 @@ describe('SearchBar keyword 空格调用', () => {
     fireEvent.submit(screen.getByRole('search'))
     expect(onNavigate).toHaveBeenCalledWith('https://www.baidu.com/s?wd=%E5%A4%A9%E6%B0%94')
   })
+
+  it('临时切换后清空输入立即恢复默认引擎（002 问题 1）', () => {
+    const input = () => screen.getByLabelText('搜索关键词') as HTMLInputElement
+    setup()
+    fireEvent.change(input(), { target: { value: 'baidu ' } })
+    expect(screen.getByPlaceholderText('使用 百度 搜索')).not.toBeNull()
+
+    // 输入任意内容后再清空：临时引擎必须解除。
+    fireEvent.change(input(), { target: { value: 'x' } })
+    fireEvent.change(input(), { target: { value: '' } })
+    expect(screen.getByText('Bing')).not.toBeNull()
+    expect(screen.getByPlaceholderText('使用 Bing 搜索')).not.toBeNull()
+  })
+
+  it('临时切换后可用默认引擎 keyword 再切回来（不会锁死）', () => {
+    const input = () => screen.getByLabelText('搜索关键词') as HTMLInputElement
+    setup()
+    fireEvent.change(input(), { target: { value: 'baidu ' } })
+    expect(screen.getByPlaceholderText('使用 百度 搜索')).not.toBeNull()
+
+    fireEvent.change(input(), { target: { value: 'bing ' } })
+    expect(input().value).toBe('')
+    expect(screen.getByText('Bing')).not.toBeNull()
+    expect(screen.getByPlaceholderText('使用 Bing 搜索')).not.toBeNull()
+  })
+
+  it('临时切换期间徽标给出临时态提示，菜单高亮当前生效引擎', () => {
+    const input = () => screen.getByLabelText('搜索关键词') as HTMLInputElement
+    setup()
+    fireEvent.change(input(), { target: { value: 'baidu ' } })
+    expect(screen.getByRole('button', { name: /当前：百度·临时/ })).not.toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /切换搜索引擎/ }))
+    const baiduOption = screen.getByRole('option', { name: /百度/ })
+    expect(baiduOption.getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('临时切换后从菜单选择引擎会持久化并解除临时态', () => {
+    const input = () => screen.getByLabelText('搜索关键词') as HTMLInputElement
+    const { onChangeEngine } = setup()
+    fireEvent.change(input(), { target: { value: 'baidu ' } })
+    fireEvent.click(screen.getByRole('button', { name: /切换搜索引擎/ }))
+    fireEvent.click(screen.getByRole('option', { name: /Bing/ }))
+    expect(onChangeEngine).toHaveBeenCalledWith('bing')
+    expect(screen.queryByRole('button', { name: /临时/ })).toBeNull()
+  })
 })

@@ -72,6 +72,28 @@
   font-size: 12.5px;
 }
 
+/* 分组内联快速新建（002 改善 2） */
+.quick-add__group-create {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.quick-add__group-create .quick-add__input {
+  flex: 1 1 140px;
+}
+
+.quick-add__group-create .quick-add__error {
+  flex: 1 1 100%;
+}
+
+.quick-add__btn--mini {
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: 12.5px;
+}
+
 .quick-add__actions {
   display: flex;
   justify-content: flex-end;

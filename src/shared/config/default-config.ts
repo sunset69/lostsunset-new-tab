@@ -1,4 +1,4 @@
-import type { SearchEngine, Shortcut, UserConfig } from '../models/config'
+import type { SearchEngine, Shortcut, ShortcutGroup, UserConfig } from '../models/config'
 import { CONFIG_VERSION } from '../models/config'
 import { BUILTIN_IMAGE_PRESETS, GRADIENT_PRESETS } from './builtin-wallpapers'
 import { createId } from '../utils/id'
@@ -93,6 +93,15 @@ export function createEnvironmentDraft(name: string) {
     name: name.trim() || '未命名环境',
     color: '#38bdf8',
     variables: {},
+  }
+}
+
+/** 生成新快捷方式分组的工厂（快捷添加弹窗快速建组，002 改善 2）。 */
+export function createShortcutGroupDraft(name: string, order: number): ShortcutGroup {
+  return {
+    id: createId('group'),
+    name: name.trim() || '未命名分组',
+    order,
   }
 }
 

@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useConfig } from '../../config/config-context'
-import { createShortcutDraft } from '../../../shared/config/default-config'
+import { createShortcutDraft, createShortcutGroupDraft } from '../../../shared/config/default-config'
 import { defaultTitleFromUrl, normalizeUrlInput } from '../../../shared/utils/url-input'
 import './ShortcutQuickAdd.css'
+
+/** 分组下拉中「新建分组」哨兵值（002 改善 2）。 */
+const NEW_GROUP_VALUE = '__new_group__'
 
 export type ShortcutQuickAddInitial = {
   url?: string
@@ -43,7 +46,12 @@ export default function ShortcutQuickAdd({ initial, defaultGroupId, onClose }: S
   const [iconChoice, setIconChoice] = useState<IconChoice>('favicon')
   const [emoji, setEmoji] = useState('')
   const [errors, setErrors] = useState<FormErrors>({})
+  // 分组内联快速新建（002 改善 2）。
+  const [groupCreateOpen, setGroupCreateOpen] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [groupError, setGroupError] = useState<string | null>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
+  const groupSelectRef = useRef<HTMLSelectElement>(null)
 
   // Escape 关闭；Tab 在弹窗内循环（焦点圈定）。
   useEffect(() => {
@@ -82,6 +90,38 @@ export default function ShortcutQuickAdd({ initial, defaultGroupId, onClose }: S
 
   function clearError(key: keyof FormErrors) {
     setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev))
+  }
+
+  function openGroupCreate() {
+    setNewGroupName('')
+    setGroupError(null)
+    setGroupCreateOpen(true)
+  }
+
+  function cancelGroupCreate() {
+    setGroupCreateOpen(false)
+    setGroupError(null)
+    groupSelectRef.current?.focus()
+  }
+
+  function confirmGroupCreate() {
+    const name = newGroupName.trim()
+    if (!name) {
+      setGroupError('分组名称不能为空')
+      return
+    }
+    if (groups.some((group) => group.name.trim() === name)) {
+      setGroupError('已存在同名分组')
+      return
+    }
+    const order = groups.reduce((max, group) => Math.max(max, group.order), -1) + 1
+    const group = createShortcutGroupDraft(name, order)
+    void updateConfig((draft) => {
+      draft.shortcutGroups.push(group)
+    }).then(() => groupSelectRef.current?.focus())
+    setGroupId(group.id)
+    setGroupCreateOpen(false)
+    setGroupError(null)
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -174,21 +214,81 @@ export default function ShortcutQuickAdd({ initial, defaultGroupId, onClose }: S
           </div>
 
           <div className="quick-add__field">
-            <label className="quick-add__label" htmlFor="quick-add-group">
+            <label
+              className="quick-add__label"
+              htmlFor={groupCreateOpen ? 'quick-add-new-group' : 'quick-add-group'}
+            >
               分组
             </label>
-            <select
-              id="quick-add-group"
-              className="quick-add__input"
-              value={effectiveGroupId}
-              onChange={(event) => setGroupId(event.target.value)}
-            >
-              {groups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
+            {groupCreateOpen ? (
+              <div className="quick-add__group-create">
+                <input
+                  id="quick-add-new-group"
+                  className="quick-add__input"
+                  type="text"
+                  maxLength={24}
+                  autoFocus
+                  placeholder="输入新分组名称"
+                  value={newGroupName}
+                  aria-invalid={groupError ? true : undefined}
+                  aria-describedby={groupError ? 'quick-add-group-error' : undefined}
+                  onChange={(event) => {
+                    setNewGroupName(event.target.value)
+                    setGroupError(null)
+                  }}
+                  onKeyDown={(event) => {
+                    // 输入框内 Enter 确认建组；Escape 仅退出建组，不关闭整个弹窗。
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      confirmGroupCreate()
+                    } else if (event.key === 'Escape') {
+                      event.stopPropagation()
+                      cancelGroupCreate()
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="quick-add__btn quick-add__btn--mini quick-add__btn--primary"
+                  onClick={confirmGroupCreate}
+                >
+                  确认
+                </button>
+                <button
+                  type="button"
+                  className="quick-add__btn quick-add__btn--mini"
+                  onClick={cancelGroupCreate}
+                >
+                  取消
+                </button>
+                {groupError && (
+                  <p className="quick-add__error" id="quick-add-group-error" role="alert">
+                    {groupError}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <select
+                id="quick-add-group"
+                ref={groupSelectRef}
+                className="quick-add__input"
+                value={effectiveGroupId}
+                onChange={(event) => {
+                  if (event.target.value === NEW_GROUP_VALUE) {
+                    openGroupCreate()
+                  } else {
+                    setGroupId(event.target.value)
+                  }
+                }}
+              >
+                {groups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+                <option value={NEW_GROUP_VALUE}>＋ 新建分组…</option>
+              </select>
+            )}
           </div>
 
           <div className="quick-add__field">
