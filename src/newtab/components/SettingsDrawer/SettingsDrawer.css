@@ -270,6 +270,110 @@
   flex-shrink: 0;
 }
 
+/* ---------- 搜索引擎列表（v2） ---------- */
+
+.engine-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.engine-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.engine-list__item {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.engine-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.engine-row__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.engine-row__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.engine-row__badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.18);
+  color: #7dd3fc;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.engine-row__meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.engine-row__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.engine-row__delete:not(:disabled) {
+  color: #fca5a5;
+}
+
+.engine-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.engine-edit__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.engine-add {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.engine-add__presets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.field__warning {
+  margin: 0;
+  font-size: 12px;
+  color: #fbbf24;
+}
+
 /* ---------- 壁纸 ---------- */
 
 .wallpaper-settings {

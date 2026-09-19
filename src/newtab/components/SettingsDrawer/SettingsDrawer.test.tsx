@@ -43,8 +43,8 @@ describe('SettingsDrawer', () => {
     for (const title of ['搜索引擎', '环境', '快捷方式', '壁纸', '备份与同步']) {
       expect(within(dialog).getByRole('heading', { name: title })).not.toBeNull()
     }
-    // 各分区内容挂载（搜索引擎输入框、WebDAV 操作按钮）。
-    expect(within(dialog).getByLabelText('引擎名称')).not.toBeNull()
+    // 各分区内容挂载（引擎列表行、WebDAV 操作按钮）。
+    expect(within(dialog).getByText('Bing')).not.toBeNull()
     expect(within(dialog).getByRole('button', { name: '测试连接' })).not.toBeNull()
   })
 

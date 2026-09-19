@@ -11,7 +11,7 @@ import SettingsDrawer from './components/SettingsDrawer/SettingsDrawer'
 export type SettingsSection = 'search' | 'environment' | 'shortcuts' | 'wallpaper' | 'backup'
 
 export default function App() {
-  const { ready, config, recovered } = useConfig()
+  const { ready, config, recovered, updateConfig } = useConfig()
   const wallpaper = useWallpaper(config ? config.settings.wallpaper : null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('search')
@@ -49,11 +49,14 @@ export default function App() {
           )}
           <ShortcutDock>
             <SearchBar
-              engine={
-                config.settings.searchEngines.find(
-                  (item) => item.id === config.settings.activeSearchEngineId,
-                ) ?? config.settings.searchEngines[0]
-              }
+              engines={config.settings.searchEngines}
+              activeEngineId={config.settings.activeSearchEngineId}
+              onChangeEngine={(id) => {
+                void updateConfig((draft) => {
+                  draft.settings.activeSearchEngineId = id
+                })
+              }}
+              onManageEngines={() => openSettings('search')}
             />
           </ShortcutDock>
           {settingsOpen && (
