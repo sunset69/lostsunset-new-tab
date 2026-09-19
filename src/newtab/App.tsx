@@ -12,15 +12,18 @@ import ShortcutQuickAdd, {
 import SettingsDrawer from './components/SettingsDrawer/SettingsDrawer'
 import { parseDroppedLink } from '../shared/utils/dnd-link'
 import { DEFAULT_GROUP_ID } from '../shared/config/default-config'
+import type { Shortcut } from '../shared/models/config'
 
 export type SettingsSection = 'search' | 'environment' | 'shortcuts' | 'wallpaper' | 'backup'
 
-/** 「+」/拖拽共用的快捷添加弹窗状态；null 表示关闭。 */
-type QuickAddState = { initial?: ShortcutQuickAddInitial } | null
+/** 「+」/拖拽/右键编辑共用的快捷弹窗状态；null 表示关闭。 */
+type QuickAddState = { initial?: ShortcutQuickAddInitial; editing?: Shortcut } | null
 
 export default function App() {
   const { ready, config, recovered, updateConfig } = useConfig()
-  const wallpaper = useWallpaper(config ? config.settings.wallpaper : null)
+  // 随机壁纸「换一张」计数：仅触发重新抽签，不落盘（0003 改善 4）。
+  const [randomNonce, setRandomNonce] = useState(0)
+  const wallpaper = useWallpaper(config ? config.settings.wallpaper : null, randomNonce)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('search')
   const [quickAdd, setQuickAdd] = useState<QuickAddState>(null)
@@ -83,7 +86,11 @@ export default function App() {
         </p>
       ) : (
         <>
-          <TopBar onOpenSettings={() => openSettings('search')} onOpenWallpaper={() => openSettings('wallpaper')} />
+          <TopBar
+            onOpenSettings={() => openSettings('search')}
+            onOpenWallpaper={() => openSettings('wallpaper')}
+            onRerollWallpaper={() => setRandomNonce((nonce) => nonce + 1)}
+          />
           <ClockGreeting />
           {recovered && (
             <p className="page__notice" role="status">
@@ -95,7 +102,10 @@ export default function App() {
               原壁纸不存在，已切换默认背景
             </p>
           )}
-          <ShortcutDock onRequestAdd={() => setQuickAdd({})}>
+          <ShortcutDock
+            onRequestAdd={() => setQuickAdd({})}
+            onRequestEditShortcut={(shortcut) => setQuickAdd({ editing: shortcut })}
+          >
             <SearchBar
               engines={config.settings.searchEngines}
               activeEngineId={config.settings.activeSearchEngineId}
@@ -119,6 +129,7 @@ export default function App() {
       {quickAdd && config && (
         <ShortcutQuickAdd
           initial={quickAdd.initial}
+          editing={quickAdd.editing}
           defaultGroupId={defaultGroupId}
           onClose={() => setQuickAdd(null)}
         />

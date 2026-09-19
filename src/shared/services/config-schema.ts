@@ -148,11 +148,32 @@ export function parseUserConfig(raw: unknown): AsyncResult<UserConfig, AppError>
     return schemaError('wallpaper-random-pool-invalid')
   }
 
+  if (
+    wallpaper.randomButtonVisible !== undefined &&
+    typeof wallpaper.randomButtonVisible !== 'boolean'
+  ) {
+    return schemaError('wallpaper-random-button-visible-invalid')
+  }
+
+  const lastFixed = wallpaper.lastFixed
+  if (
+    lastFixed !== undefined &&
+    (!isObject(lastFixed) ||
+      typeof lastFixed.mode !== 'string' ||
+      !(['builtin', 'upload', 'gradient'] as readonly string[]).includes(lastFixed.mode) ||
+      typeof lastFixed.value !== 'string' ||
+      (lastFixed.assetId !== undefined && typeof lastFixed.assetId !== 'string'))
+  ) {
+    return schemaError('wallpaper-last-fixed-invalid')
+  }
+
   const dock = settings.dock
   if (
     !isObject(dock) ||
     typeof dock.iconSize !== 'number' ||
-    typeof dock.showLabels !== 'boolean'
+    typeof dock.showLabels !== 'boolean' ||
+    (dock.width !== undefined &&
+      (typeof dock.width !== 'number' || !Number.isFinite(dock.width)))
   ) {
     return schemaError('dock-invalid')
   }

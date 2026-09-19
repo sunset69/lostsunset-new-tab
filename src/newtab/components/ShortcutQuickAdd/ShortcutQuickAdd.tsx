@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useConfig } from '../../config/config-context'
 import { createShortcutDraft, createShortcutGroupDraft } from '../../../shared/config/default-config'
 import { defaultTitleFromUrl, normalizeUrlInput } from '../../../shared/utils/url-input'
+import type { Shortcut } from '../../../shared/models/config'
 import './ShortcutQuickAdd.css'
 
 /** 分组下拉中「新建分组」哨兵值（002 改善 2）。 */
@@ -15,6 +16,8 @@ export type ShortcutQuickAddInitial = {
 export type ShortcutQuickAddProps = {
   /** 拖拽预填：URL 与可选标题。 */
   initial?: ShortcutQuickAddInitial
+  /** 编辑既有快捷方式（0003 改善 1）；提供时弹窗为编辑模式。 */
+  editing?: Shortcut
   /** 新快捷方式默认落到的分组。 */
   defaultGroupId: string
   onClose: () => void
@@ -29,22 +32,34 @@ const FOCUSABLE_SELECTOR =
 
 /**
  * 快捷添加弹窗（0001 改善 6a / 设计 4.1）：
- * Dock「+」与拖拽链接共用；URL 规范化校验，名称留空自动取域名。
+ * Dock「+」与拖拽链接共用；0003 改善 1 起支持编辑既有快捷方式。
+ * URL 规范化校验，名称留空自动取域名。
  */
-export default function ShortcutQuickAdd({ initial, defaultGroupId, onClose }: ShortcutQuickAddProps) {
+export default function ShortcutQuickAdd({
+  initial,
+  editing,
+  defaultGroupId,
+  onClose,
+}: ShortcutQuickAddProps) {
   const { config, updateConfig } = useConfig()
   const groups = [...(config?.shortcutGroups ?? [])].sort((a, b) => a.order - b.order)
-  const [url, setUrl] = useState(initial?.url ?? '')
-  const [title, setTitle] = useState(initial?.title ?? '')
-  const [groupId, setGroupId] = useState(() =>
-    groups.some((group) => group.id === defaultGroupId) ? defaultGroupId : (groups[0]?.id ?? ''),
-  )
+  const [url, setUrl] = useState(initial?.url ?? editing?.urlTemplate ?? '')
+  const [title, setTitle] = useState(initial?.title ?? editing?.title ?? '')
+  const [groupId, setGroupId] = useState(() => {
+    if (editing) return editing.groupId
+    return groups.some((group) => group.id === defaultGroupId) ? defaultGroupId : (groups[0]?.id ?? '')
+  })
   // 配置加载晚于挂载或选中分组被删除时，回退到第一个分组。
   const effectiveGroupId = groups.some((group) => group.id === groupId)
     ? groupId
     : (groups[0]?.id ?? '')
-  const [iconChoice, setIconChoice] = useState<IconChoice>('favicon')
-  const [emoji, setEmoji] = useState('')
+  const [iconChoice, setIconChoice] = useState<IconChoice>(() => {
+    if (!editing) return 'favicon'
+    if (editing.icon.type === 'emoji') return 'emoji'
+    if (editing.icon.type === 'favicon') return 'favicon'
+    return 'initial'
+  })
+  const [emoji, setEmoji] = useState(editing?.icon.type === 'emoji' ? editing.icon.value : '')
   const [errors, setErrors] = useState<FormErrors>({})
   // 分组内联快速新建（002 改善 2）。
   const [groupCreateOpen, setGroupCreateOpen] = useState(false)
@@ -142,16 +157,31 @@ export default function ShortcutQuickAdd({ initial, defaultGroupId, onClose }: S
 
     const finalUrl = parsed.url
     const finalTitle = (title.trim() || defaultTitleFromUrl(finalUrl)).slice(0, 32)
+    const finalIcon =
+      iconChoice === 'emoji'
+        ? { type: 'emoji' as const, value: emoji.trim() }
+        : { type: (iconChoice === 'favicon' ? 'favicon' : 'custom') as 'favicon' | 'custom', value: '' }
+
+    if (editing) {
+      void updateConfig((draft) => {
+        const target = draft.shortcuts.find((item) => item.id === editing.id)
+        if (target) {
+          target.title = finalTitle
+          target.urlTemplate = finalUrl
+          target.groupId = effectiveGroupId
+          target.icon = finalIcon
+        }
+      })
+      onClose()
+      return
+    }
 
     void updateConfig((draft) => {
       const order = draft.shortcuts.reduce((max, item) => Math.max(max, item.order), -1) + 1
       const shortcut = createShortcutDraft(effectiveGroupId, order)
       shortcut.title = finalTitle
       shortcut.urlTemplate = finalUrl
-      shortcut.icon =
-        iconChoice === 'emoji'
-          ? { type: 'emoji', value: emoji.trim() }
-          : { type: iconChoice === 'favicon' ? 'favicon' : 'custom', value: '' }
+      shortcut.icon = finalIcon
       draft.shortcuts.push(shortcut)
     })
     onClose()
@@ -168,7 +198,7 @@ export default function ShortcutQuickAdd({ initial, defaultGroupId, onClose }: S
         onClick={(event) => event.stopPropagation()}
       >
         <h2 className="quick-add__heading" id="quick-add-title">
-          添加快捷方式
+          {editing ? '编辑快捷方式' : '添加快捷方式'}
         </h2>
 
         <form className="quick-add__form" onSubmit={handleSubmit} noValidate>
@@ -341,7 +371,7 @@ export default function ShortcutQuickAdd({ initial, defaultGroupId, onClose }: S
               取消
             </button>
             <button type="submit" className="quick-add__btn quick-add__btn--primary">
-              添加
+              {editing ? '保存' : '添加'}
             </button>
           </div>
         </form>

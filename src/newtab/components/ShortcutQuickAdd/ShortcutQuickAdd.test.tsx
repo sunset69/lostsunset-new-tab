@@ -6,7 +6,7 @@ import { ConfigProvider } from '../../config/config-context'
 import { createDefaultConfig } from '../../../shared/config/default-config'
 import { createMemoryStorage } from '../../../shared/storage/memory-storage'
 import { STORAGE_KEYS } from '../../../shared/storage/storage-keys'
-import type { UserConfig } from '../../../shared/models/config'
+import type { Shortcut, UserConfig } from '../../../shared/models/config'
 
 async function setup(initial?: { url?: string; title?: string }) {
   const onClose = vi.fn()
@@ -33,6 +33,33 @@ async function readGroups(storage: ReturnType<typeof createMemoryStorage>) {
 
 const groupControl = () => screen.getByLabelText('分组') as HTMLSelectElement
 const NEW_GROUP_VALUE = '__new_group__'
+
+function makeShortcut(overrides: Partial<Shortcut> = {}): Shortcut {
+  return {
+    id: 's1',
+    groupId: 'group-default',
+    title: '示例站',
+    urlTemplate: 'https://example.com',
+    icon: { type: 'favicon', value: '' },
+    order: 0,
+    ...overrides,
+  }
+}
+
+async function setupEditing(overrides: Partial<Shortcut> = {}) {
+  const onClose = vi.fn()
+  const config = createDefaultConfig()
+  const shortcut = makeShortcut(overrides)
+  config.shortcuts = [shortcut]
+  const storage = createMemoryStorage({ [STORAGE_KEYS.userConfig]: config })
+  render(
+    <ConfigProvider storage={storage}>
+      <ShortcutQuickAdd editing={shortcut} defaultGroupId="group-default" onClose={onClose} />
+    </ConfigProvider>,
+  )
+  await screen.findByRole('dialog', { name: '编辑快捷方式' })
+  return { onClose, storage, shortcut }
+}
 
 describe('ShortcutQuickAdd 基础交互', () => {
   it('渲染弹窗与表单，焦点落在网址输入框', async () => {
@@ -213,5 +240,70 @@ describe('ShortcutQuickAdd 提交', () => {
     const [shortcut] = await readShortcuts(storage)
     expect(shortcut.icon.type).toBe('custom')
     expect(shortcut.title).toBe('示例')
+  })
+})
+
+describe('ShortcutQuickAdd 编辑模式（0003 改善 1）', () => {
+  it('预填既有值，保存更新原条目而非新增', async () => {
+    const { onClose, storage } = await setupEditing()
+
+    expect((screen.getByLabelText('网址') as HTMLInputElement).value).toBe('https://example.com')
+    expect((screen.getByLabelText('名称（留空自动取域名）') as HTMLInputElement).value).toBe('示例站')
+    expect(groupControl().value).toBe('group-default')
+    expect(screen.getByRole('button', { name: '保存' })).not.toBeNull()
+
+    fireEvent.change(screen.getByLabelText('名称（留空自动取域名）'), {
+      target: { value: '改名站' },
+    })
+    fireEvent.change(screen.getByLabelText('网址'), {
+      target: { value: 'https://changed.example.com' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+
+    await waitFor(async () => {
+      expect(await readShortcuts(storage)).toHaveLength(1)
+    })
+    const [shortcut] = await readShortcuts(storage)
+    expect(shortcut.id).toBe('s1')
+    expect(shortcut.title).toBe('改名站')
+    // URL 规范化会给裸域名补尾斜杠（URL.toString 特性）。
+    expect(shortcut.urlTemplate).toBe('https://changed.example.com/')
+    expect(shortcut.order).toBe(0)
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('编辑时可改分组与图标', async () => {
+    const { storage } = await setupEditing({ icon: { type: 'emoji', value: '🛠️' } })
+
+    expect((screen.getByLabelText('表情') as HTMLInputElement).value).toBe('🛠️')
+    fireEvent.change(groupControl(), { target: { value: 'group-default' } })
+    fireEvent.change(screen.getByLabelText('图标'), { target: { value: 'initial' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+
+    await waitFor(async () => {
+      const [shortcut] = await readShortcuts(storage)
+      expect(shortcut.icon.type).toBe('custom')
+    })
+    const [shortcut] = await readShortcuts(storage)
+    expect(shortcut.groupId).toBe('group-default')
+  })
+
+  it('编辑时清空名称自动回填域名，网址校验失败不落盘', async () => {
+    const { onClose, storage } = await setupEditing()
+
+    fireEvent.change(screen.getByLabelText('名称（留空自动取域名）'), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('网址'), { target: { value: 'bad url' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('网址格式不正确')
+    expect(onClose).not.toHaveBeenCalled()
+
+    fireEvent.change(screen.getByLabelText('网址'), { target: { value: 'changed.example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+    await waitFor(async () => {
+      const [shortcut] = await readShortcuts(storage)
+      expect(shortcut.title).toBe('changed.example.com')
+    })
   })
 })

@@ -11,6 +11,8 @@ import {
   MAX_WALLPAPER_SIZE,
   addWallpaperAsset,
   applyPresetWallpaper,
+  enterRandomMode,
+  exitRandomMode,
   removeWallpaperAsset,
   resolveWallpaper,
   setRandomPool,
@@ -295,6 +297,82 @@ describe('setRandomPool', () => {
     const next = setRandomPool(config, { gradients: ['g'], builtinIds: [], assetIds: ['a'] })
     expect(next.settings.wallpaper.randomPool).toEqual({ gradients: ['g'], builtinIds: [], assetIds: ['a'] })
     expect(config.settings.wallpaper.randomPool).not.toEqual(next.settings.wallpaper.randomPool)
+  })
+})
+
+describe('enterRandomMode / exitRandomMode（0003 改善 4）', () => {
+  it('固定模式进入随机时记录 lastFixed，退出后恢复', () => {
+    const config = createDefaultConfig()
+    config.settings.wallpaper = { mode: 'gradient', value: 'linear-gradient(1px, #111)', overlayOpacity: 0.3 }
+
+    const random = enterRandomMode(config)
+    expect(random.settings.wallpaper.mode).toBe('random')
+    expect(random.settings.wallpaper.value).toBe('')
+    expect(random.settings.wallpaper.lastFixed).toEqual({
+      mode: 'gradient',
+      value: 'linear-gradient(1px, #111)',
+    })
+
+    const restored = exitRandomMode(random)
+    expect(restored.settings.wallpaper.mode).toBe('gradient')
+    expect(restored.settings.wallpaper.value).toBe('linear-gradient(1px, #111)')
+    expect(restored.settings.wallpaper.assetId).toBeUndefined()
+    // 不修改入参。
+    expect(config.settings.wallpaper.mode).toBe('gradient')
+  })
+
+  it('上传模式记录 assetId，退出后一并恢复', () => {
+    const config = createDefaultConfig()
+    config.settings.wallpaper = {
+      mode: 'upload',
+      value: 'a1',
+      assetId: 'a1',
+      overlayOpacity: 0.3,
+    }
+
+    const random = enterRandomMode(config)
+    expect(random.settings.wallpaper.lastFixed).toEqual({ mode: 'upload', value: 'a1', assetId: 'a1' })
+
+    const restored = exitRandomMode(random)
+    expect(restored.settings.wallpaper.mode).toBe('upload')
+    expect(restored.settings.wallpaper.value).toBe('a1')
+    expect(restored.settings.wallpaper.assetId).toBe('a1')
+  })
+
+  it('随机模式下重复进入不覆盖已有 lastFixed', () => {
+    const config = createDefaultConfig()
+    config.settings.wallpaper = {
+      mode: 'random',
+      value: '',
+      overlayOpacity: 0.3,
+      lastFixed: { mode: 'gradient', value: 'keep' },
+    }
+
+    const again = enterRandomMode(config)
+    expect(again.settings.wallpaper.lastFixed).toEqual({ mode: 'gradient', value: 'keep' })
+  })
+
+  it('无 lastFixed 时退出回退默认渐变', () => {
+    const config = createDefaultConfig()
+    config.settings.wallpaper = { mode: 'random', value: '', overlayOpacity: 0.3 }
+
+    const restored = exitRandomMode(config)
+    expect(restored.settings.wallpaper.mode).toBe('gradient')
+    expect(restored.settings.wallpaper.value).toBe(DEFAULT_WALLPAPER.value)
+  })
+
+  it('lastFixed 无效（空 value）时退出回退默认渐变', () => {
+    const config = createDefaultConfig()
+    config.settings.wallpaper = {
+      mode: 'random',
+      value: '',
+      overlayOpacity: 0.3,
+      lastFixed: { mode: 'builtin', value: '' },
+    }
+
+    const restored = exitRandomMode(config)
+    expect(restored.settings.wallpaper.mode).toBe('gradient')
+    expect(restored.settings.wallpaper.value).toBe(DEFAULT_WALLPAPER.value)
   })
 })
 

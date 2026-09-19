@@ -232,6 +232,57 @@ export async function applyPresetWallpaper(
   return next
 }
 
+/**
+ * 进入随机模式（0003 改善 4）：先记录当前固定壁纸，退出随机时可恢复。
+ * 已在随机模式时保留原 lastFixed，不覆盖。
+ */
+export function enterRandomMode(current: UserConfig): UserConfig {
+  const next: UserConfig = structuredClone(current)
+  const wallpaper = next.settings.wallpaper
+  if (wallpaper.mode !== 'random') {
+    wallpaper.lastFixed = {
+      mode: wallpaper.mode,
+      value: wallpaper.value,
+      ...(wallpaper.assetId ? { assetId: wallpaper.assetId } : {}),
+    }
+  }
+  wallpaper.mode = 'random'
+  wallpaper.value = ''
+  delete wallpaper.assetId
+  return next
+}
+
+/**
+ * 退出随机模式（0003 改善 4，右键关闭按钮/设置选择固定壁纸共用）：
+ * 恢复进入随机前的固定壁纸；记录缺失或指向已删除资产时回退默认渐变。
+ */
+export function exitRandomMode(current: UserConfig): UserConfig {
+  const next: UserConfig = structuredClone(current)
+  const wallpaper = next.settings.wallpaper
+  const last = wallpaper.lastFixed
+  const usable =
+    !!last &&
+    (last.mode === 'builtin' || last.mode === 'gradient' || last.mode === 'upload') &&
+    typeof last.value === 'string' &&
+    last.value.length > 0 &&
+    (last.mode !== 'upload' || Boolean(last.assetId ?? last.value))
+
+  if (usable && last) {
+    wallpaper.mode = last.mode
+    wallpaper.value = last.value
+    if (last.assetId) {
+      wallpaper.assetId = last.assetId
+    } else {
+      delete wallpaper.assetId
+    }
+  } else {
+    wallpaper.mode = 'gradient'
+    wallpaper.value = DEFAULT_WALLPAPER.value
+    delete wallpaper.assetId
+  }
+  return next
+}
+
 /** 更新随机池勾选（0001 改善 3），返回新配置；不修改入参。 */
 export function setRandomPool(current: UserConfig, pool: WallpaperRandomPool): UserConfig {
   const next: UserConfig = structuredClone(current)

@@ -16,8 +16,12 @@ export type WallpaperState = {
 /**
  * 按壁纸配置解析可渲染背景（设计文档 6.1 第 7 步）。
  * 上传资产转换为 object URL 并在变更/卸载时释放。
+ * `rerollNonce` 变化时重新抽签（随机模式下「换一张」，0003 改善 4）；不落盘。
  */
-export function useWallpaper(wallpaper: WallpaperConfig | null): WallpaperState {
+export function useWallpaper(
+  wallpaper: WallpaperConfig | null,
+  rerollNonce = 0,
+): WallpaperState {
   const [state, setState] = useState<WallpaperState>({ background: null, recovered: false })
 
   useEffect(() => {
@@ -48,7 +52,7 @@ export function useWallpaper(wallpaper: WallpaperConfig | null): WallpaperState 
         URL.revokeObjectURL(objectUrl)
       }
     }
-  }, [wallpaper])
+  }, [wallpaper, rerollNonce])
 
   return state
 }

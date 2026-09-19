@@ -1,19 +1,26 @@
 import { useConfig } from '../../config/config-context'
+import { exitRandomMode } from '../../../shared/services/wallpaper-service'
 import EnvironmentSwitcher from '../EnvironmentSwitcher/EnvironmentSwitcher'
 import './TopBar.css'
 
 type TopBarProps = {
   onOpenSettings: () => void
   onOpenWallpaper: () => void
+  /** 随机模式下点击骰子按钮「换一张」（0003 改善 4）；未启用随机时不渲染按钮。 */
+  onRerollWallpaper?: () => void
 }
 
 /** 顶栏（设计文档 3.2）：环境切换 + 壁纸快捷入口 + 设置入口。 */
-export default function TopBar({ onOpenSettings, onOpenWallpaper }: TopBarProps) {
-  const { config, updateConfig } = useConfig()
+export default function TopBar({ onOpenSettings, onOpenWallpaper, onRerollWallpaper }: TopBarProps) {
+  const { config, updateConfig, commitConfig } = useConfig()
 
   if (!config) {
     return null
   }
+
+  const wallpaper = config.settings.wallpaper
+  const showRandomButton =
+    wallpaper.mode === 'random' && (wallpaper.randomButtonVisible ?? true)
 
   return (
     <header className="topbar">
@@ -27,6 +34,28 @@ export default function TopBar({ onOpenSettings, onOpenWallpaper }: TopBarProps)
         }
       />
       <div className="topbar__actions">
+        {showRandomButton && (
+          <button
+            type="button"
+            className="topbar__icon-button"
+            aria-label="换一张随机壁纸"
+            title="换一张随机壁纸（右键退出随机模式）"
+            onClick={onRerollWallpaper}
+            onContextMenu={(event) => {
+              event.preventDefault()
+              void commitConfig(exitRandomMode(config))
+            }}
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+              <rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" strokeWidth="2" />
+              <circle cx="8.2" cy="8.2" r="1.7" fill="currentColor" />
+              <circle cx="15.8" cy="8.2" r="1.7" fill="currentColor" />
+              <circle cx="12" cy="12" r="1.7" fill="currentColor" />
+              <circle cx="8.2" cy="15.8" r="1.7" fill="currentColor" />
+              <circle cx="15.8" cy="15.8" r="1.7" fill="currentColor" />
+            </svg>
+          </button>
+        )}
         <button
           type="button"
           className="topbar__icon-button"

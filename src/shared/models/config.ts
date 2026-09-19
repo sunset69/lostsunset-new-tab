@@ -16,6 +16,13 @@ export type SearchEngine = {
 
 export type WallpaperMode = 'builtin' | 'upload' | 'gradient' | 'random'
 
+/** 固定壁纸引用（进入随机模式前记录，退出随机时恢复）。 */
+export type WallpaperFixedRef = {
+  mode: Exclude<WallpaperMode, 'random'>
+  value: string
+  assetId?: string
+}
+
 /** 随机壁纸候选池：三类来源各自勾选，抽签时合并。 */
 export type WallpaperRandomPool = {
   gradients: string[]
@@ -33,11 +40,17 @@ export type WallpaperConfig = {
   blur?: number
   /** mode='random' 时的抽签池；允许为空（运行时回退默认渐变）。 */
   randomPool?: WallpaperRandomPool
+  /** mode='random' 时是否在画面上显示随机切换按钮（0003 改善 4）；缺省视为显示。 */
+  randomButtonVisible?: boolean
+  /** 进入随机模式前的固定壁纸（0003 改善 4），退出随机时恢复。 */
+  lastFixed?: WallpaperFixedRef
 }
 
 export type DockConfig = {
   iconSize: number
   showLabels: boolean
+  /** Dock 手动宽度（px，0003 改善 3）；缺省为自动铺满。 */
+  width?: number
 }
 
 export type Environment = {

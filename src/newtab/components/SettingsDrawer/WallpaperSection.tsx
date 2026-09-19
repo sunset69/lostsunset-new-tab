@@ -11,6 +11,7 @@ import {
   WALLPAPER_ERROR_MESSAGES,
   addWallpaperAsset,
   applyPresetWallpaper,
+  enterRandomMode,
   removeWallpaperAsset,
   validateImageFile,
 } from '../../../shared/services/wallpaper-service'
@@ -84,11 +85,7 @@ export default function WallpaperSection() {
 
   function chooseRandomMode() {
     setError(null)
-    void updateConfig((draft) => {
-      draft.settings.wallpaper.mode = 'random'
-      draft.settings.wallpaper.value = ''
-      delete draft.settings.wallpaper.assetId
-    })
+    void commitConfig(enterRandomMode(config!))
   }
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -182,6 +179,20 @@ export default function WallpaperSection() {
         用缩略图上的勾选框选择参与随机的壁纸（当前随机池：渐变 {pool.gradients.length}、内置图{' '}
         {pool.builtinIds.length}、本地 {pool.assetIds.length} 张）。
       </p>
+      {wallpaper.mode === 'random' && (
+        <label className="backup-checkbox">
+          <input
+            type="checkbox"
+            checked={wallpaper.randomButtonVisible ?? true}
+            onChange={(event) =>
+              updateConfig((draft) => {
+                draft.settings.wallpaper.randomButtonVisible = event.target.checked
+              })
+            }
+          />
+          在画面上显示「换一张」随机按钮（点击换一张，右键退出随机）
+        </label>
+      )}
 
       <span className="field__label">渐变背景</span>
       <div className="wallpaper-grid" role="radiogroup" aria-label="渐变背景">

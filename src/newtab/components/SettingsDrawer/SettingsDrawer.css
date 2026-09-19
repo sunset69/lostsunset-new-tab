@@ -390,6 +390,8 @@
 
 .wallpaper-swatch {
   position: relative;
+  /* 包裹 .wallpaper-cell 后不再是 grid item，需显式占满列宽（否则按钮收缩为内容宽、aspect-ratio 高度归零）。 */
+  width: 100%;
   aspect-ratio: 16 / 10;
   padding: 0;
   border: 2px solid rgba(255, 255, 255, 0.14);
@@ -446,8 +448,9 @@
   cursor: pointer;
 }
 
-/* 随机模式卡片 */
+/* 随机模式卡片（跨满整行，避免被 4 列网格挤压） */
 .wallpaper-random {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -478,6 +481,8 @@
 /* 缩略图容器：壁纸 + 随机勾选框 */
 .wallpaper-cell {
   position: relative;
+  display: flex;
+  min-width: 0;
 }
 
 .wallpaper-cell__check {
