@@ -18,7 +18,18 @@ import { isValidSearchTemplate } from '../utils/url-search'
  */
 
 const WALLPAPER_MODES: readonly WallpaperMode[] = ['builtin', 'upload', 'gradient', 'random']
-const ICON_TYPES = new Set(['favicon', 'builtin', 'emoji', 'custom'])
+const ICON_TYPES = new Set(['favicon', 'builtin', 'emoji', 'custom', 'image'])
+const CLOCK_POSITIONS = new Set([
+  'top-left',
+  'top-center',
+  'top-right',
+  'middle-left',
+  'middle-center',
+  'middle-right',
+  'bottom-left',
+  'bottom-center',
+  'bottom-right',
+])
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -176,6 +187,16 @@ export function parseUserConfig(raw: unknown): AsyncResult<UserConfig, AppError>
       (typeof dock.width !== 'number' || !Number.isFinite(dock.width)))
   ) {
     return schemaError('dock-invalid')
+  }
+
+  const clock = settings.clock
+  if (
+    clock !== undefined &&
+    (!isObject(clock) ||
+      typeof clock.position !== 'string' ||
+      !CLOCK_POSITIONS.has(clock.position))
+  ) {
+    return schemaError('clock-invalid')
   }
 
   if (!Array.isArray(raw.environments) || !raw.environments.every(validateEnvironment)) {

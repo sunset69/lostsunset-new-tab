@@ -1,10 +1,69 @@
+/* 时钟区块：固定定位，具体落点由 clock-block--<position> 修饰类决定（0004 改善 3）。 */
 .clock-block {
   position: fixed;
-  left: clamp(20px, 3vw, 32px);
-  bottom: clamp(140px, 18vh, 168px);
   z-index: 1;
   color: #fff;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- 纵向三档 ---------- */
+
+.clock-block--top-left,
+.clock-block--top-center,
+.clock-block--top-right {
+  /* 避开顶栏（顶栏高约 66–86px）。 */
+  top: clamp(76px, 11vh, 100px);
+}
+
+.clock-block--middle-left,
+.clock-block--middle-center,
+.clock-block--middle-right {
+  top: 50%;
+}
+
+.clock-block--bottom-left,
+.clock-block--bottom-center,
+.clock-block--bottom-right {
+  bottom: clamp(140px, 18vh, 168px);
+}
+
+/* ---------- 横向三档 ---------- */
+
+.clock-block--top-left,
+.clock-block--middle-left,
+.clock-block--bottom-left {
+  left: clamp(20px, 3vw, 32px);
+  text-align: left;
+}
+
+.clock-block--top-center,
+.clock-block--middle-center,
+.clock-block--bottom-center {
+  left: 50%;
+  text-align: center;
+}
+
+.clock-block--top-right,
+.clock-block--middle-right,
+.clock-block--bottom-right {
+  right: clamp(20px, 3vw, 32px);
+  text-align: right;
+}
+
+/* ---------- 居中位移 ---------- */
+
+.clock-block--top-center,
+.clock-block--bottom-center {
+  transform: translateX(-50%);
+}
+
+.clock-block--middle-left,
+.clock-block--middle-right {
+  transform: translateY(-50%);
+}
+
+.clock-block--middle-center {
+  transform: translate(-50%, -50%);
 }
 
 .clock-block__time {
@@ -23,7 +82,9 @@
 }
 
 @media (max-width: 700px) {
-  .clock-block {
+  .clock-block--bottom-left,
+  .clock-block--bottom-center,
+  .clock-block--bottom-right {
     bottom: 190px;
   }
 }

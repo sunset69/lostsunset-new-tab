@@ -4,7 +4,7 @@ import { defineManifest } from '@crxjs/vite-plugin'
 export default defineManifest({
   manifest_version: 3,
   name: 'LostSunset New Tab',
-  version: '0.1.0',
+  version: '0.2.0',
   description: '沉浸式壁纸、快捷方式与内网环境地址管理的新标签页扩展。',
   icons: {
     16: 'icons/icon-16.png',

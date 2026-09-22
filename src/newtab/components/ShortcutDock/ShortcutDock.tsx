@@ -46,6 +46,19 @@ function ShortcutIcon({ shortcut, resolvedUrl }: { shortcut: Shortcut; resolvedU
     )
   }
 
+  // 自定义图片 URL（0004 改善 2）：加载失败（含协议受限/断链）回退名称首字。
+  if (shortcut.icon.type === 'image' && shortcut.icon.value && !fallback) {
+    return (
+      <img
+        className="shortcut-dock__icon shortcut-dock__icon--img"
+        src={shortcut.icon.value}
+        alt=""
+        aria-hidden="true"
+        onError={() => setFallback(true)}
+      />
+    )
+  }
+
   if (shortcut.icon.type === 'favicon' && faviconUrl && !fallback) {
     return (
       <img

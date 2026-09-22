@@ -326,3 +326,41 @@ describe('ShortcutDock 宽度调节（0003 改善 3）', () => {
     })
   })
 })
+
+describe('ShortcutDock 自定义图片图标（0004 改善 2）', () => {
+  it('image 类型渲染自定义 URL 图片', async () => {
+    const config = createDefaultConfig()
+    config.shortcuts = [
+      makeShortcut({
+        icon: { type: 'image', value: 'https://cdn.example.com/logo.png' },
+      }),
+    ]
+    renderDock(config)
+
+    const link = await screen.findByRole('link', { name: '示例站' })
+    const img = link.querySelector('img')
+    expect(img).not.toBeNull()
+    expect(img!.getAttribute('src')).toBe('https://cdn.example.com/logo.png')
+  })
+
+  it('自定义图片加载失败时回退名称首字', async () => {
+    const config = createDefaultConfig()
+    config.shortcuts = [
+      makeShortcut({
+        title: '示例站',
+        icon: { type: 'image', value: 'https://broken.example.com/x.png' },
+      }),
+    ]
+    renderDock(config)
+
+    const link = await screen.findByRole('link', { name: '示例站' })
+    const img = link.querySelector('img')!
+    fireEvent.error(img)
+
+    await waitFor(() => {
+      const text = link.querySelector('.shortcut-dock__icon--text')
+      expect(text?.textContent).toBe('示')
+    })
+    expect(link.querySelector('img')).toBeNull()
+  })
+})

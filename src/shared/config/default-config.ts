@@ -1,4 +1,10 @@
-import type { SearchEngine, Shortcut, ShortcutGroup, UserConfig } from '../models/config'
+import type {
+  ClockPosition,
+  SearchEngine,
+  Shortcut,
+  ShortcutGroup,
+  UserConfig,
+} from '../models/config'
 import { CONFIG_VERSION } from '../models/config'
 import { BUILTIN_IMAGE_PRESETS, GRADIENT_PRESETS } from './builtin-wallpapers'
 import { createId } from '../utils/id'
@@ -37,6 +43,9 @@ export const SEARCH_ENGINE_PRESETS: SearchEngine[] = [
 export const DEFAULT_GROUP_ID = 'group-default'
 export const DEFAULT_ENVIRONMENT_ID = 'env-default'
 
+/** 时钟默认位置（0004 改善 3）：与初始 CSS 布局保持一致的左下。 */
+export const DEFAULT_CLOCK_POSITION: ClockPosition = 'bottom-left'
+
 /** 默认渐变背景值（与 GRADIENT_PRESETS[0] 一致，独立常量避免循环依赖）。 */
 const DEFAULT_WALLPAPER_GRADIENT = 'linear-gradient(140deg, #0b1020 0%, #2563eb 48%, #f59e0b 100%)'
 
@@ -65,6 +74,9 @@ export function createDefaultConfig(now: Date = new Date()): UserConfig {
       dock: {
         iconSize: 44,
         showLabels: false,
+      },
+      clock: {
+        position: DEFAULT_CLOCK_POSITION,
       },
     },
     environments: [

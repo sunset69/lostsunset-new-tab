@@ -674,6 +674,62 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* ---------- 外观（时钟位置，0004 改善 3） ---------- */
+
+.appearance-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clock-position-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 260px;
+}
+
+.clock-position__cell {
+  display: flex;
+  min-height: 48px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.clock-position__cell:hover {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.clock-position__cell:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.8);
+  outline-offset: 2px;
+}
+
+.clock-position__cell--active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.14);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.5);
+}
+
+.clock-position__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.clock-position__cell--active .clock-position__dot {
+  background: #7dd3fc;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.9);
+}
+
 /* ---------- 变量编辑器 ---------- */
 
 .var-editor {

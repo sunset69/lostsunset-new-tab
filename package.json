@@ -1,7 +1,7 @@
 {
   "name": "lostsunset-new-tab",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "沉浸式壁纸、快捷方式与内网环境地址管理的 Chrome/Edge 新标签页扩展",
   "engines": {

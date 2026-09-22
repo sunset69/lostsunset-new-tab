@@ -14,7 +14,13 @@ import { parseDroppedLink } from '../shared/utils/dnd-link'
 import { DEFAULT_GROUP_ID } from '../shared/config/default-config'
 import type { Shortcut } from '../shared/models/config'
 
-export type SettingsSection = 'search' | 'environment' | 'shortcuts' | 'wallpaper' | 'backup'
+export type SettingsSection =
+  | 'search'
+  | 'environment'
+  | 'shortcuts'
+  | 'wallpaper'
+  | 'appearance'
+  | 'backup'
 
 /** 「+」/拖拽/右键编辑共用的快捷弹窗状态；null 表示关闭。 */
 type QuickAddState = { initial?: ShortcutQuickAddInitial; editing?: Shortcut } | null

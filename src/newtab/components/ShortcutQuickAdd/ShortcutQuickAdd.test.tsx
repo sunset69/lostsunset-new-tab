@@ -241,6 +241,52 @@ describe('ShortcutQuickAdd 提交', () => {
     expect(shortcut.icon.type).toBe('custom')
     expect(shortcut.title).toBe('示例')
   })
+
+  it('自定义图片 URL：未填时报错且不入库', async () => {
+    const { onClose, storage } = await setup()
+
+    fireEvent.change(screen.getByLabelText('网址'), { target: { value: 'https://example.com' } })
+    fireEvent.change(screen.getByLabelText('图标'), { target: { value: 'image' } })
+    fireEvent.click(screen.getByRole('button', { name: '添加' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('图标 URL 不能为空')
+    expect(onClose).not.toHaveBeenCalled()
+    expect(await readShortcuts(storage)).toHaveLength(0)
+  })
+
+  it('自定义图片 URL：非 http(s) 协议报错', async () => {
+    const { storage } = await setup()
+
+    fireEvent.change(screen.getByLabelText('网址'), { target: { value: 'https://example.com' } })
+    fireEvent.change(screen.getByLabelText('图标'), { target: { value: 'image' } })
+    fireEvent.change(screen.getByLabelText('图标 URL'), {
+      target: { value: 'ftp://example.com/a.png' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '添加' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toContain('仅支持 http 或 https 地址')
+    expect(await readShortcuts(storage)).toHaveLength(0)
+  })
+
+  it('自定义图片 URL：缺协议补 https 后入库为 image 类型', async () => {
+    const { onClose, storage } = await setup()
+
+    fireEvent.change(screen.getByLabelText('网址'), { target: { value: 'https://example.com' } })
+    fireEvent.change(screen.getByLabelText('图标'), { target: { value: 'image' } })
+    fireEvent.change(screen.getByLabelText('图标 URL'), {
+      target: { value: 'cdn.example.com/a.png' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '添加' }))
+
+    await waitFor(async () => {
+      expect(await readShortcuts(storage)).toHaveLength(1)
+    })
+    const [shortcut] = await readShortcuts(storage)
+    expect(shortcut.icon).toEqual({ type: 'image', value: 'https://cdn.example.com/a.png' })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('ShortcutQuickAdd 编辑模式（0003 改善 1）', () => {
@@ -286,6 +332,25 @@ describe('ShortcutQuickAdd 编辑模式（0003 改善 1）', () => {
     })
     const [shortcut] = await readShortcuts(storage)
     expect(shortcut.groupId).toBe('group-default')
+  })
+
+  it('编辑自定义图片图标时预填 URL，可改回网站图标', async () => {
+    const { storage } = await setupEditing({
+      icon: { type: 'image', value: 'https://cdn.example.com/a.png' },
+    })
+
+    expect((screen.getByLabelText('图标') as HTMLSelectElement).value).toBe('image')
+    expect((screen.getByLabelText('图标 URL') as HTMLInputElement).value).toBe(
+      'https://cdn.example.com/a.png',
+    )
+
+    fireEvent.change(screen.getByLabelText('图标'), { target: { value: 'favicon' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存' }))
+
+    await waitFor(async () => {
+      const [shortcut] = await readShortcuts(storage)
+      expect(shortcut.icon).toEqual({ type: 'favicon', value: '' })
+    })
   })
 
   it('编辑时清空名称自动回填域名，网址校验失败不落盘', async () => {

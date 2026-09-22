@@ -23,9 +23,9 @@ export type ShortcutQuickAddProps = {
   onClose: () => void
 }
 
-type IconChoice = 'favicon' | 'emoji' | 'initial'
+type IconChoice = 'favicon' | 'emoji' | 'image' | 'initial'
 
-type FormErrors = { url?: string; emoji?: string }
+type FormErrors = { url?: string; emoji?: string; iconUrl?: string }
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -56,10 +56,12 @@ export default function ShortcutQuickAdd({
   const [iconChoice, setIconChoice] = useState<IconChoice>(() => {
     if (!editing) return 'favicon'
     if (editing.icon.type === 'emoji') return 'emoji'
+    if (editing.icon.type === 'image') return 'image'
     if (editing.icon.type === 'favicon') return 'favicon'
     return 'initial'
   })
   const [emoji, setEmoji] = useState(editing?.icon.type === 'emoji' ? editing.icon.value : '')
+  const [iconUrl, setIconUrl] = useState(editing?.icon.type === 'image' ? editing.icon.value : '')
   const [errors, setErrors] = useState<FormErrors>({})
   // 分组内联快速新建（002 改善 2）。
   const [groupCreateOpen, setGroupCreateOpen] = useState(false)
@@ -146,12 +148,28 @@ export default function ShortcutQuickAdd({
     const emojiError =
       iconChoice === 'emoji' && !emoji.trim() ? '使用表情图标时请填写一个表情字符' : null
 
-    if ('error' in parsed) {
-      setErrors({ url: parsed.error, emoji: emojiError ?? undefined })
-      return
+    // 自定义图标 URL（0004 改善 2）：复用网址规范化（补 https、仅 http/https）。
+    let normalizedIconUrl = ''
+    let iconUrlError: string | null = null
+    if (iconChoice === 'image') {
+      if (!iconUrl.trim()) {
+        iconUrlError = '图标 URL 不能为空'
+      } else {
+        const parsedIcon = normalizeUrlInput(iconUrl)
+        if ('error' in parsedIcon) {
+          iconUrlError = parsedIcon.error
+        } else {
+          normalizedIconUrl = parsedIcon.url
+        }
+      }
     }
-    if (emojiError) {
-      setErrors({ url: undefined, emoji: emojiError })
+
+    if ('error' in parsed || emojiError || iconUrlError) {
+      setErrors({
+        url: 'error' in parsed ? parsed.error : undefined,
+        emoji: emojiError ?? undefined,
+        iconUrl: iconUrlError ?? undefined,
+      })
       return
     }
 
@@ -160,7 +178,9 @@ export default function ShortcutQuickAdd({
     const finalIcon =
       iconChoice === 'emoji'
         ? { type: 'emoji' as const, value: emoji.trim() }
-        : { type: (iconChoice === 'favicon' ? 'favicon' : 'custom') as 'favicon' | 'custom', value: '' }
+        : iconChoice === 'image'
+          ? { type: 'image' as const, value: normalizedIconUrl }
+          : { type: (iconChoice === 'favicon' ? 'favicon' : 'custom') as 'favicon' | 'custom', value: '' }
 
     if (editing) {
       void updateConfig((draft) => {
@@ -332,10 +352,12 @@ export default function ShortcutQuickAdd({
               onChange={(event) => {
                 setIconChoice(event.target.value as IconChoice)
                 clearError('emoji')
+                clearError('iconUrl')
               }}
             >
               <option value="favicon">网站图标（失败时用名称首字）</option>
               <option value="emoji">表情字符</option>
+              <option value="image">自定义图片 URL（失败时用名称首字）</option>
               <option value="initial">名称首字母</option>
             </select>
           </div>
@@ -361,6 +383,35 @@ export default function ShortcutQuickAdd({
               {errors.emoji && (
                 <p className="quick-add__error" role="alert">
                   {errors.emoji}
+                </p>
+              )}
+            </div>
+          )}
+
+          {iconChoice === 'image' && (
+            <div className="quick-add__field">
+              <label className="quick-add__label" htmlFor="quick-add-icon-url">
+                图标 URL
+              </label>
+              <input
+                id="quick-add-icon-url"
+                className="quick-add__input"
+                type="text"
+                inputMode="url"
+                spellCheck={false}
+                autoFocus
+                placeholder="https://example.com/icon.png"
+                value={iconUrl}
+                aria-invalid={errors.iconUrl ? true : undefined}
+                aria-describedby={errors.iconUrl ? 'quick-add-icon-url-error' : undefined}
+                onChange={(event) => {
+                  setIconUrl(event.target.value)
+                  clearError('iconUrl')
+                }}
+              />
+              {errors.iconUrl && (
+                <p className="quick-add__error" id="quick-add-icon-url-error" role="alert">
+                  {errors.iconUrl}
                 </p>
               )}
             </div>

@@ -53,6 +53,22 @@ export type DockConfig = {
   width?: number
 }
 
+/** 时钟在主画面上的九宫格预设位置（0004 改善 3）。 */
+export type ClockPosition =
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'middle-left'
+  | 'middle-center'
+  | 'middle-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right'
+
+export type ClockConfig = {
+  position: ClockPosition
+}
+
 export type Environment = {
   id: string
   name: string
@@ -67,7 +83,11 @@ export type ShortcutGroup = {
   order: number
 }
 
-export type ShortcutIconType = 'favicon' | 'builtin' | 'emoji' | 'custom'
+/**
+ * favicon：取站点同源 /favicon.ico；emoji：表情字符；custom：名称首字兜底；
+ * image：用户自定义图片 URL（0004 改善 2，加载失败回退名称首字）；builtin：预留。
+ */
+export type ShortcutIconType = 'favicon' | 'builtin' | 'emoji' | 'custom' | 'image'
 
 export type Shortcut = {
   id: string
@@ -89,6 +109,8 @@ export type UserSettings = {
   activeSearchEngineId: string
   wallpaper: WallpaperConfig
   dock: DockConfig
+  /** 时钟显示位置（0004 改善 3）；旧配置缺省时视为左下。 */
+  clock?: ClockConfig
 }
 
 export type UserConfig = {

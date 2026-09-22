@@ -3,6 +3,7 @@ import SearchEngineSection from './SearchEngineSection'
 import EnvironmentSection from './EnvironmentSection'
 import ShortcutSection from './ShortcutSection'
 import WallpaperSection from './WallpaperSection'
+import AppearanceSection from './AppearanceSection'
 import BackupSection from './BackupSection'
 import type { SettingsSection } from '../../App'
 import './SettingsDrawer.css'
@@ -17,6 +18,7 @@ const SECTION_IDS: Record<SettingsSection, string> = {
   environment: 'settings-section-environment',
   shortcuts: 'settings-section-shortcuts',
   wallpaper: 'settings-section-wallpaper',
+  appearance: 'settings-section-appearance',
   backup: 'settings-section-backup',
 }
 
@@ -130,6 +132,14 @@ export default function SettingsDrawer({
             description="选择渐变或内置壁纸，也可以上传本地图片；拖动滑块调节遮罩保证文字可读。"
           >
             <WallpaperSection />
+          </SettingsSectionBlock>
+
+          <SettingsSectionBlock
+            id={SECTION_IDS.appearance}
+            title="外观"
+            description="调整时间、日期与问候语在起始页上的显示位置。"
+          >
+            <AppearanceSection />
           </SettingsSectionBlock>
 
           <SettingsSectionBlock

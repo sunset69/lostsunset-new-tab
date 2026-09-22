@@ -56,6 +56,37 @@ describe('parseUserConfig', () => {
     expect(parseUserConfig(config).ok).toBe(false)
   })
 
+  it('接受自定义图片 URL 图标类型', () => {
+    const config = createDefaultConfig()
+    config.shortcuts.push({
+      id: 's1',
+      groupId: 'group-default',
+      title: 'X',
+      urlTemplate: 'https://x.com',
+      icon: { type: 'image', value: 'https://cdn.example.com/a.png' },
+      order: 0,
+    })
+    expect(parseUserConfig(config).ok).toBe(true)
+  })
+
+  it('缺少 clock 字段（旧配置）仍然通过', () => {
+    const config = createDefaultConfig()
+    delete config.settings.clock
+    expect(parseUserConfig(config).ok).toBe(true)
+  })
+
+  it('接受合法的时钟位置', () => {
+    const config = createDefaultConfig()
+    config.settings.clock = { position: 'middle-center' }
+    expect(parseUserConfig(config).ok).toBe(true)
+  })
+
+  it('拒绝非法的时钟位置', () => {
+    const config = createDefaultConfig()
+    config.settings.clock = { position: 'left' as 'bottom-left' }
+    expect(parseUserConfig(config).ok).toBe(false)
+  })
+
   it('拒绝非数组的 shortcuts', () => {
     const raw = { ...createDefaultConfig(), shortcuts: {} }
     expect(parseUserConfig(raw).ok).toBe(false)

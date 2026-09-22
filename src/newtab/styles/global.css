@@ -38,6 +38,19 @@ textarea {
   position: relative;
   min-height: 100vh;
   color: #fff;
+  /* 0004 改善 1：应用外壳上的装饰/控件文本（时钟、Dock 标签、按钮、菜单等）
+     不参与选区，避免双击或拖拽时出现不必要的蓝色高亮。 */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 输入类控件恢复文本选择，保证输入、编辑与复制粘贴不受影响。 */
+.page input,
+.page textarea,
+.page select,
+.page [contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .page__notice {

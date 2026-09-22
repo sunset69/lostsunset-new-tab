@@ -3,6 +3,7 @@ import { useConfig } from '../../config/config-context'
 import { DEFAULT_GROUP_ID } from '../../../shared/config/default-config'
 import type { Shortcut, ShortcutIconType } from '../../../shared/models/config'
 import { createId } from '../../../shared/utils/id'
+import { normalizeUrlInput } from '../../../shared/utils/url-input'
 import {
   RESOLVE_ERROR_MESSAGES,
   type ResolveErrorCode,
@@ -14,7 +15,7 @@ type FormState = {
   id: string | null
   title: string
   urlTemplate: string
-  iconType: Extract<ShortcutIconType, 'favicon' | 'emoji'>
+  iconType: Extract<ShortcutIconType, 'favicon' | 'emoji' | 'image'>
   iconValue: string
 }
 
@@ -49,8 +50,16 @@ export default function ShortcutSection() {
       id: shortcut.id,
       title: shortcut.title,
       urlTemplate: shortcut.urlTemplate,
-      iconType: shortcut.icon.type === 'emoji' ? 'emoji' : 'favicon',
-      iconValue: shortcut.icon.value,
+      iconType:
+        shortcut.icon.type === 'emoji'
+          ? 'emoji'
+          : shortcut.icon.type === 'image'
+            ? 'image'
+            : 'favicon',
+      iconValue:
+        shortcut.icon.type === 'emoji' || shortcut.icon.type === 'image'
+          ? shortcut.icon.value
+          : '',
     })
   }
 
@@ -86,9 +95,22 @@ export default function ShortcutSection() {
       )
       return
     }
-    if (form.iconType === 'emoji' && !form.iconValue.trim()) {
-      setError('使用表情图标时请填写一个表情字符')
-      return
+    let icon: Shortcut['icon']
+    if (form.iconType === 'emoji') {
+      if (!form.iconValue.trim()) {
+        setError('使用表情图标时请填写一个表情字符')
+        return
+      }
+      icon = { type: 'emoji', value: form.iconValue.trim() }
+    } else if (form.iconType === 'image') {
+      const parsedIcon = normalizeUrlInput(form.iconValue)
+      if ('error' in parsedIcon) {
+        setError(parsedIcon.error)
+        return
+      }
+      icon = { type: 'image', value: parsedIcon.url }
+    } else {
+      icon = { type: 'favicon', value: '' }
     }
 
     const id = form.id ?? createId('shortcut')
@@ -97,7 +119,7 @@ export default function ShortcutSection() {
       groupId: DEFAULT_GROUP_ID,
       title,
       urlTemplate,
-      icon: { type: form.iconType, value: form.iconType === 'emoji' ? form.iconValue.trim() : '' },
+      icon,
       order: form.id
         ? shortcuts.find((item) => item.id === form.id)?.order ?? shortcuts.length
         : shortcuts.length,
@@ -259,6 +281,7 @@ export default function ShortcutSection() {
             >
               <option value="favicon">网站 favicon（失败时用标题首字）</option>
               <option value="emoji">表情字符</option>
+              <option value="image">自定义图片 URL（失败时用标题首字）</option>
             </select>
           </div>
 
@@ -274,6 +297,24 @@ export default function ShortcutSection() {
                 maxLength={8}
                 value={form.iconValue}
                 placeholder="例如 🛠️"
+                onChange={(event) => setForm({ ...form, iconValue: event.target.value })}
+              />
+            </div>
+          )}
+
+          {form.iconType === 'image' && (
+            <div className="field">
+              <label className="field__label" htmlFor="shortcut-icon-url">
+                图标 URL
+              </label>
+              <input
+                id="shortcut-icon-url"
+                className="field__input field__input--mono"
+                type="text"
+                inputMode="url"
+                spellCheck={false}
+                value={form.iconValue}
+                placeholder="https://example.com/icon.png"
                 onChange={(event) => setForm({ ...form, iconValue: event.target.value })}
               />
             </div>
