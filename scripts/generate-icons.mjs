@@ -159,3 +159,11 @@ for (const size of [16, 32, 48, 128]) {
   writeFileSync(target, png)
   console.log(`generated ${target} (${png.length} bytes)`)
 }
+
+// Edge/Chrome 商店要求 300×300 商店 logo；放 docs/store-assets/ 以免被打进扩展包。
+const storeDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'store-assets')
+mkdirSync(storeDir, { recursive: true })
+const storeLogo = encodePng(300, Buffer.from(render(300)))
+const storeLogoPath = join(storeDir, 'store-logo-300.png')
+writeFileSync(storeLogoPath, storeLogo)
+console.log(`generated ${storeLogoPath} (${storeLogo.length} bytes)`)
